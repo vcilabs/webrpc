@@ -1,4 +1,4 @@
-package ridl
+package golang
 
 import (
 	"errors"
@@ -48,6 +48,7 @@ func newParser(r io.Reader) (*parser, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(tokens)
 
 	p := &parser{
 		words:  make(chan interface{}),
@@ -376,40 +377,6 @@ func parserStateComment(p *parser) parserState {
 	return parserDefaultState
 }
 
-func parserStateDeclaration(p *parser) parserState {
-	word := p.cursor()
-	if word.tt != tokenWord {
-		return p.stateError(errUnexpectedToken)
-	}
-
-	switch word.val {
-	case wordWebRPC, wordName, wordVersion:
-		// <word> = <value> # optional comment
-		return parserStateDefinition
-	case wordImport:
-		// import
-		//   - <value> [<# comment>]
-		return parserStateImport
-	case wordEnum:
-		// enum <name>: <type>
-		//   - <name>[<space>=<space><value>][<#comment>]
-		return parserStateEnum
-	case wordMessage:
-		// message <name>
-		//   - <name>: <type>
-		//     + <tag.name> = <VALUE>
-		return parserStateMessage
-	case wordService:
-		// service <name>
-		//   - <name>([arguments]) [=> ([arguments])]
-		return parserStateService
-	default:
-		return p.stateError(errUnexpectedToken)
-	}
-
-	return parserDefaultState
-}
-
 func parserDefaultState(p *parser) parserState {
 	tok := p.cursor()
 
@@ -421,8 +388,8 @@ func parserDefaultState(p *parser) parserState {
 	case tokenNewLine:
 		return parserStateNewLine
 
-	case tokenWord:
-		return parserStateDeclaration
+	//case tokenWord:
+	//	return parserStateDeclaration
 
 	case tokenHash:
 		return parserStateComment

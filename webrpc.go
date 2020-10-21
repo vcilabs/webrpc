@@ -7,6 +7,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/webrpc/webrpc/schema"
+	"github.com/webrpc/webrpc/schema/golang"
 	"github.com/webrpc/webrpc/schema/ridl"
 )
 
@@ -56,8 +57,8 @@ func ParseSchemaFile(schemaFilePath string) (*schema.WebRPCSchema, error) {
 
 		return s, nil
 	} else if ext == ".go" {
-		rdr := ridl.NewParser(schema.NewReader(fp, path))
-		s, err := rdr.GoParse()
+		goRdr := golang.NewParser(schema.NewReader(fp, path))
+		s, err := goRdr.GoParse()
 		if err != nil {
 			return nil, err
 		}

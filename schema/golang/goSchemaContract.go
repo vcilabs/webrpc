@@ -1,4 +1,4 @@
-package ridl
+package golang
 
 import (
 	"flag"
@@ -9,6 +9,23 @@ import (
 	"github.com/webrpc/webrpc/schema"
 	"golang.org/x/tools/go/packages"
 )
+
+type Parser struct {
+	parent  *Parser
+	imports map[string]struct{}
+
+	reader *schema.Reader
+}
+
+func NewParser(r *schema.Reader) *Parser {
+	return &Parser{
+		reader: r,
+		imports: map[string]struct{}{
+			// this file imports itself
+			r.File: struct{}{},
+		},
+	}
+}
 
 //GoParse parses the go file
 func (p *Parser) GoParse() (*schema.WebRPCSchema, error) {
@@ -21,7 +38,6 @@ func (p *Parser) GoParse() (*schema.WebRPCSchema, error) {
 }
 
 func (p *Parser) goparse() (*schema.WebRPCSchema, error) {
-	fmt.Println("I am inside go parse")
 	_, err := newParser(p.reader)
 	if err != nil {
 		return nil, err
