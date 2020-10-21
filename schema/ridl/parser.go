@@ -44,7 +44,10 @@ type parser struct {
 }
 
 func newParser(r io.Reader) (*parser, error) {
+	fmt.Println("I am inside newParser parser.go")
 	tokens, err := tokenize(r)
+	fmt.Println("token", tokens)
+	fmt.Println("err", err)
 	if err != nil {
 		return nil, err
 	}
