@@ -21,8 +21,9 @@ type WebRPCSchema struct {
 	SchemaVersion string    `json:"version"`
 	Imports       []*Import `json:"imports"`
 
-	Messages []*Message `json:"messages"`
-	Services []*Service `json:"services"`
+	Messages    []*Message     `json:"messages"`
+	Services    []*Service     `json:"services"`
+	GoInterface []*GoInterface `json:"goInterface"`
 }
 
 type Import struct {
@@ -102,6 +103,16 @@ func (s *WebRPCSchema) GetServiceByName(name string) *Service {
 	for _, service := range s.Services {
 		if strings.ToLower(string(service.Name)) == name {
 			return service
+		}
+	}
+	return nil
+}
+
+func (s *WebRPCSchema) GetInterfaceByName(name string) *GoInterface {
+	name = strings.ToLower(name)
+	for _, goInterface := range s.GoInterface {
+		if strings.ToLower(string(goInterface.Name)) == name {
+			return goInterface
 		}
 	}
 	return nil

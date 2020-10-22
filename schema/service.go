@@ -13,27 +13,27 @@ type Service struct {
 	Schema *WebRPCSchema `json:"-"` // denormalize/back-reference
 }
 
-type Method struct {
-	Name VarName `json:"name"`
+// type Method struct {
+// 	Name VarName `json:"name"`
 
-	StreamInput  bool `json:"streamInput,omitempty"`
-	StreamOutput bool `json:"streamOutput,omitempty"`
-	Proxy        bool `json:"-"` // TODO: actual implementation
+// 	StreamInput  bool `json:"streamInput,omitempty"`
+// 	StreamOutput bool `json:"streamOutput,omitempty"`
+// 	Proxy        bool `json:"-"` // TODO: actual implementation
 
-	Inputs  []*MethodArgument `json:"inputs"`
-	Outputs []*MethodArgument `json:"outputs"`
+// 	Inputs  []*MethodArgument `json:"inputs"`
+// 	Outputs []*MethodArgument `json:"outputs"`
 
-	Service *Service `json:"-"` // denormalize/back-reference
-}
+// 	Service *Service `json:"-"` // denormalize/back-reference
+// }
 
-type MethodArgument struct {
-	Name     VarName  `json:"name"`
-	Type     *VarType `json:"type"`
-	Optional bool     `json:"optional"`
+// type MethodArgument struct {
+// 	Name     VarName  `json:"name"`
+// 	Type     *VarType `json:"type"`
+// 	Optional bool     `json:"optional"`
 
-	InputArg  bool `json:"-"` // denormalize/back-reference
-	OutputArg bool `json:"-"` // denormalize/back-reference
-}
+// 	InputArg  bool `json:"-"` // denormalize/back-reference
+// 	OutputArg bool `json:"-"` // denormalize/back-reference
+// }
 
 func (s *Service) Parse(schema *WebRPCSchema) error {
 	s.Schema = schema // back-ref

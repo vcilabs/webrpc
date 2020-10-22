@@ -1,5 +1,7 @@
 package golang
 
+import "fmt"
+
 // NodeType represents the type of a parser tree node.
 type NodeType uint
 
@@ -13,6 +15,7 @@ const (
 	ArgumentNodeType
 	MethodNodeType
 	ServiceNodeType
+	InterfaceNodeType
 )
 
 // Node represents a parser tree node
@@ -112,6 +115,17 @@ func (rn RootNode) Services() []*ServiceNode {
 	}
 
 	return serviceNodes
+}
+
+func (rn RootNode) Interfaces() []*InterfaceNode {
+	nodes := rn.Filter(InterfaceNodeType)
+
+	interfaceNodes := make([]*InterfaceNode, 0, len(nodes))
+	for i := range nodes {
+		interfaceNodes = append(interfaceNodes, nodes[i].(*InterfaceNode))
+	}
+	fmt.Println("interfaceNodes", interfaceNodes)
+	return interfaceNodes
 }
 
 func (rn RootNode) Type() NodeType {
@@ -335,6 +349,27 @@ func (sn ServiceNode) Name() *TokenNode {
 
 func (sn ServiceNode) Methods() []*MethodNode {
 	return sn.methods
+}
+
+//InterfaceNode
+type InterfaceNode struct {
+	node
+
+	name *TokenNode
+
+	methods []*MethodNode
+}
+
+func (in InterfaceNode) Type() NodeType {
+	return InterfaceNodeType
+}
+
+func (in InterfaceNode) Name() *TokenNode {
+	return in.name
+}
+
+func (in InterfaceNode) Methods() []*MethodNode {
+	return in.methods
 }
 
 type argumentList struct {
