@@ -52,18 +52,18 @@ func ParseSchemaFile(schemaFilePath string) (*schema.WebRPCSchema, error) {
 		rdr := ridl.NewParser(schema.NewReader(fp, path))
 		s, err := rdr.Parse()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Error! Unable to read file: %s. The error is %v", filepath.Base(path), err)
 		}
 
 		return s, nil
 	} else if ext == ".go" {
-		goRdr := golang.NewParser(schema.NewReader(fp, path))
-		s, err := goRdr.GoParse()
+		goParser := golang.NewParser(schema.NewReader(fp, path))
+		g, err := goParser.Parse()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("Error! Unable to read file: %s. The error is %v", filepath.Base(path), err)
 		}
 
-		return s, nil
+		return g, nil
 	} else {
 		return nil, errors.Errorf("error! invalid extension, %s", ext)
 	}

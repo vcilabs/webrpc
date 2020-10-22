@@ -25,7 +25,7 @@ func NewParser(r *schema.Reader) *Parser {
 }
 
 //GoParse parses the go file
-func (p *Parser) GoParse() (*schema.WebRPCSchema, error) {
+func (p *Parser) Parse() (*schema.WebRPCSchema, error) {
 	s, err := p.goparse()
 	if err != nil {
 		return nil, err
@@ -36,7 +36,6 @@ func (p *Parser) GoParse() (*schema.WebRPCSchema, error) {
 
 func (p *Parser) goparse() (*schema.WebRPCSchema, error) {
 	q, err := newParser(p.reader)
-	fmt.Println("I am after parser")
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +89,7 @@ func (p *Parser) goparse() (*schema.WebRPCSchema, error) {
 	// return s, nil
 
 	// pushing Interfaces (1st pass)
+	fmt.Println(q.root)
 	for _, goInterface := range q.root.Interfaces() {
 		// push service
 		s.GoInterface = append(s.GoInterface, &schema.GoInterface{
@@ -98,12 +98,8 @@ func (p *Parser) goparse() (*schema.WebRPCSchema, error) {
 	}
 
 	for _, goInterface := range q.root.Interfaces() {
-		fmt.Println("I am inside goInterface For loop")
 		methods := []*schema.Method{}
-
 		for _, method := range goInterface.Methods() {
-
-			fmt.Println("I am inside method For loop")
 			// inputs, err := buildArgumentsList(s, method.Inputs())
 			// if err != nil {
 			// 	return nil, err

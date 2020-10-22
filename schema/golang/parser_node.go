@@ -119,6 +119,7 @@ func (rn RootNode) Services() []*ServiceNode {
 
 func (rn RootNode) Interfaces() []*InterfaceNode {
 	nodes := rn.Filter(InterfaceNodeType)
+	fmt.Println("nodes", nodes)
 
 	interfaceNodes := make([]*InterfaceNode, 0, len(nodes))
 	for i := range nodes {
