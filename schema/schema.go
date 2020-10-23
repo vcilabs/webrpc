@@ -21,9 +21,10 @@ type WebRPCSchema struct {
 	SchemaVersion string    `json:"version"`
 	Imports       []*Import `json:"imports"`
 
-	Messages    []*Message     `json:"messages"`
-	Services    []*Service     `json:"services"`
-	GoInterface []*GoInterface `json:"goInterface"`
+	Messages         []*Message     `json:"messages"`
+	Services         []*Service     `json:"services"`
+	GoInterface      []*GoInterface `json:"goInterface"`
+	GoInterfaceScope []string       `json:"goInterfacescope"`
 }
 
 type Import struct {

@@ -2,7 +2,14 @@ package golang
 
 import (
 	"fmt"
+	"go/ast"
+	"go/importer"
+	"go/parser"
+	"go/token"
+
 	"go/types"
+	"io/ioutil"
+	"log"
 
 	"github.com/webrpc/webrpc/schema"
 )
@@ -25,106 +32,60 @@ func NewParser(r *schema.Reader) *Parser {
 }
 
 //GoParse parses the go file
-func (p *Parser) Parse() (*schema.WebRPCSchema, error) {
-	s, err := p.goparse()
+func (p *Parser) Parse(path string) (*schema.WebRPCSchema, error) {
+	s, err := p.goparse(path)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("I am outsde s-->", s)
 
 	return s, nil
 }
 
-func (p *Parser) goparse() (*schema.WebRPCSchema, error) {
-	q, err := newParser(p.reader)
+func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
+		fmt.Println("File reading error", err)
 		return nil, err
 	}
-	//flag.Parse()
+	var parsedFile = string(data)
+	fmt.Println("Contents of file:", parsedFile)
+
+	fset := token.NewFileSet()
+
+	// Parse the input string, []byte, or io.Reader,
+	// recording position information in fset.
+	// ParseFile returns an *ast.File, a syntax tree.
+	//f, err := parser.ParseFile(fset, filepath.Base(path), strings.TrimSuffix(filepath.Base(path), ".go"), 0)
+	f, err := parser.ParseFile(fset, "parsedFile.go", parsedFile, 0)
+	if err != nil {
+		log.Fatal(err) // parse error
+	}
+
+	// A Config controls various options of the type checker.
+	// The defaults work fine except for one setting:
+	// we must specify how to deal with imports.
+	conf := types.Config{Importer: importer.Default()}
+
+	// Type-check the package containing only file f.
+	// Check returns a *types.Package.
+	pkg, err := conf.Check("cmd/parsedFile.go", fset, []*ast.File{f}, nil)
+	if err != nil {
+		log.Fatal(err) // type error
+	}
+
+	fmt.Printf("Package  %q\n", pkg.Path())
+	fmt.Printf("Name:    %s\n", pkg.Name())
+	fmt.Printf("Imports: %s\n", pkg.Imports())
+	fmt.Printf("Scope:   %s\n", pkg.Scope())
+
 	//TODO: update the code to add proper schema
 	s := &schema.WebRPCSchema{
-		GoInterface: []*schema.GoInterface{},
+		//GoInterface: []*schema.GoInterface{},
+		GoInterfaceScope: []string{},
 	}
-	// Many tools pass their command-line arguments (after any flags)
-	// uninterpreted to packages.Load so that it can interpret them
-	// according to the conventions of the underlying build system.
+	s.GoInterfaceScope = append(s.GoInterfaceScope, pkg.Scope().String())
 
-	// cfg := &packages.Config{
-	// 	Mode:  packages.NeedFiles | packages.NeedTypes | packages.NeedName | packages.NeedTypesInfo | packages.NeedDeps | packages.NeedName | packages.NeedSyntax,
-	// 	Tests: false,
-	// }
-	// fmt.Println("cfg", cfg)
-	// pkgs, err := packages.Load(cfg, flag.Args()...)
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "load: %v\n", err)
-	// 	os.Exit(1)
-	// }
-	// if packages.PrintErrors(pkgs) > 0 {
-	// 	os.Exit(1)
-	// }
-	// // Print the names of the source files
-	// // for each package listed on the command line.
-	// for _, pkg := range pkgs {
-	// 	//fmt.Println(pkg.ID, pkg.GoFiles)
-	// 	//scope := pkg.Types.
-	// 	scope := pkg.Types.Scope()
-	// 	//fmt.Printf("%#v\n", scope.Names())
-	// 	for _, name := range scope.Names() {
-	// 		obj := scope.Lookup(name)
-	// 		switch item := obj.Type().Underlying().(type) {
-	// 		case *types.Interface:
-	// 			//fmt.Printf("interface %s: %#v\n", name, item)
-	// 		case *types.Struct:
-	// 			for i := 0; i < item.NumFields(); i++ {
-	// 				field := item.Field(i)
-	// 				typ := field.Type().Underlying()
-	// 				fmt.Printf("%s.%s: %v (%v) -- underlying %v\n", name, field.Name(), field.Type(), field.Pkg(), typ)
-	// 			}
-	// 		case *types.Basic:
-	// 			fmt.Printf("basic type %s %v %v %#v\n", name, item.Name(), printBasicType(item.Kind()), item)
-	// 		default:
-	// 			fmt.Printf("what is this? %s: %T\n", name, item)
-	// 		}
-	// 	}
-	// }
-	// return s, nil
-
-	// pushing Interfaces (1st pass)
-	fmt.Println(q.root)
-	for _, goInterface := range q.root.Interfaces() {
-		// push service
-		s.GoInterface = append(s.GoInterface, &schema.GoInterface{
-			Name: schema.VarName(goInterface.Name().String()),
-		})
-	}
-
-	for _, goInterface := range q.root.Interfaces() {
-		methods := []*schema.Method{}
-		for _, method := range goInterface.Methods() {
-			// inputs, err := buildArgumentsList(s, method.Inputs())
-			// if err != nil {
-			// 	return nil, err
-			// }
-
-			// outputs, err := buildArgumentsList(s, method.Outputs())
-			// if err != nil {
-			// 	return nil, err
-			// }
-
-			// push method
-			methods = append(methods, &schema.Method{
-				Name: schema.VarName(method.Name().String()),
-				//StreamInput:  method.StreamInput(),
-				//StreamOutput: method.StreamOutput(),
-				//Inputs:       inputs,
-				//Outputs:      outputs,
-			})
-		}
-
-		interfaceDef := s.GetInterfaceByName(goInterface.Name().String())
-		fmt.Println("interfaceDef-->", interfaceDef)
-		interfaceDef.Methods = methods
-	}
-	fmt.Println("s", s)
 	return s, nil
 }
 
