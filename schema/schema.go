@@ -25,6 +25,8 @@ type WebRPCSchema struct {
 	Services         []*Service     `json:"services"`
 	GoInterface      []*GoInterface `json:"goInterface"`
 	GoInterfaceScope []string       `json:"goInterfacescope"`
+	GoStructScope    []string       `json:"gostructscope"`
+	GoDataTypeScope  []string       `json:"godatatypescope"`
 }
 
 type Import struct {

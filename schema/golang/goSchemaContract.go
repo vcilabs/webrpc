@@ -6,6 +6,7 @@ import (
 	"go/importer"
 	"go/parser"
 	"go/token"
+	"strings"
 
 	"go/types"
 	"io/ioutil"
@@ -31,14 +32,12 @@ func NewParser(r *schema.Reader) *Parser {
 	}
 }
 
-//GoParse parses the go file
+//Parse parses the go file
 func (p *Parser) Parse(path string) (*schema.WebRPCSchema, error) {
 	s, err := p.goparse(path)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("I am outsde s-->", s)
-
 	return s, nil
 }
 
@@ -49,14 +48,12 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		return nil, err
 	}
 	var parsedFile = string(data)
-	fmt.Println("Contents of file:", parsedFile)
+	//fmt.Println("Contents of file:", parsedFile)
 
 	fset := token.NewFileSet()
 
 	// Parse the input string, []byte, or io.Reader,
-	// recording position information in fset.
-	// ParseFile returns an *ast.File, a syntax tree.
-	//f, err := parser.ParseFile(fset, filepath.Base(path), strings.TrimSuffix(filepath.Base(path), ".go"), 0)
+	// recording position information in fset.ParseFile returns an *ast.File, a syntax tree.
 	f, err := parser.ParseFile(fset, "parsedFile.go", parsedFile, 0)
 	if err != nil {
 		log.Fatal(err) // parse error
@@ -74,30 +71,22 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		log.Fatal(err) // type error
 	}
 
-	fmt.Printf("Package  %q\n", pkg.Path())
-	fmt.Printf("Name:    %s\n", pkg.Name())
-	fmt.Printf("Imports: %s\n", pkg.Imports())
-	fmt.Printf("Scope:   %s\n", pkg.Scope())
-
 	//TODO: update the code to add proper schema
 	s := &schema.WebRPCSchema{
-		//GoInterface: []*schema.GoInterface{},
 		GoInterfaceScope: []string{},
+		GoStructScope:    []string{},
+		GoDataTypeScope:  []string{},
 	}
-	s.GoInterfaceScope = append(s.GoInterfaceScope, pkg.Scope().String())
 
+	splitString := strings.Split(pkg.Scope().String(), "type cmd/parsedFile.go.")
+	elementMap := make(map[string]string)
+	for _, dataMap := range splitString {
+		dataMap = strings.ReplaceAll(dataMap, "cmd/parsedFile.go.", "")
+		if strings.Contains(dataMap, "interface") {
+			elementMap["interface"] = dataMap
+		}
+		//fmt.Println("elementMap->", elementMap["interface"])
+		s.GoInterfaceScope = append(s.GoInterfaceScope, elementMap["interface"])
+	}
 	return s, nil
-}
-
-func printBasicType(kind types.BasicKind) string {
-	switch kind {
-	case types.Bool:
-		return "bool"
-	case types.Int64:
-		return "int64"
-	case types.String:
-		return "string"
-	default:
-		return fmt.Sprintf("%v", kind)
-	}
 }
