@@ -84,9 +84,14 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		dataMap = strings.ReplaceAll(dataMap, "cmd/parsedFile.go.", "")
 		if strings.Contains(dataMap, "interface") {
 			elementMap["interface"] = dataMap
+			s.GoInterfaceScope = append(s.GoInterfaceScope, elementMap["interface"])
+		} else if strings.Contains(dataMap, "struct") {
+			elementMap["struct"] = dataMap
+			s.GoStructScope = append(s.GoStructScope, elementMap["struct"])
+		} else {
+			elementMap["datatype"] = dataMap
+			s.GoDataTypeScope = append(s.GoDataTypeScope, elementMap["datatype"])
 		}
-		//fmt.Println("elementMap->", elementMap["interface"])
-		s.GoInterfaceScope = append(s.GoInterfaceScope, elementMap["interface"])
 	}
 	return s, nil
 }
