@@ -47,6 +47,7 @@ func main() {
 
 	// Parse+validate the webrpc schema file
 	schema, err := webrpc.ParseSchemaFile(*schemaFlag)
+	fmt.Println("schema->", schema)
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
