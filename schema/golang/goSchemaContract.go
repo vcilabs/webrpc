@@ -48,8 +48,6 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		return nil, err
 	}
 	var parsedFile = string(data)
-	//fmt.Println("Contents of file:", parsedFile)
-
 	fset := token.NewFileSet()
 
 	// Parse the input string, []byte, or io.Reader,
@@ -73,9 +71,10 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 
 	//TODO: update the code to add proper schema
 	s := &schema.WebRPCSchema{
-		GoInterfaceScope: []string{},
-		GoStructScope:    []string{},
-		GoDataTypeScope:  []string{},
+		//GoInterfaceScope: []string{},
+		GoInterface:     []*schema.GoInterface{},
+		GoStructScope:   []string{},
+		GoDataTypeScope: []string{},
 	}
 
 	splitString := strings.Split(pkg.Scope().String(), "type cmd/parsedFile.go.")
@@ -84,7 +83,9 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		dataMap = strings.ReplaceAll(dataMap, "cmd/parsedFile.go.", "")
 		if strings.Contains(dataMap, "interface") {
 			elementMap["interface"] = dataMap
-			s.GoInterfaceScope = append(s.GoInterfaceScope, elementMap["interface"])
+			interfaceNameField := strings.Fields(elementMap["interface"])
+			interfaceName := interfaceNameField[0]
+			s.GoInterface = append(s.GoInterface, &schema.GoInterface{Name: schema.VarName(interfaceName)})
 		} else if strings.Contains(dataMap, "struct") {
 			elementMap["struct"] = dataMap
 			s.GoStructScope = append(s.GoStructScope, elementMap["struct"])

@@ -116,7 +116,5 @@ func (m *Method) IntParse(schema *WebRPCSchema, goInterface *GoInterface) error 
 		}
 	}
 
-	// Note, we allow zero inputs and zero outputs
-
 	return nil
 }
