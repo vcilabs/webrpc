@@ -3,7 +3,6 @@ package golang
 
 import (
 	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"text/template"
@@ -58,7 +57,6 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	}{
 		proto, schemaHash, opts,
 	}
-	fmt.Println("VARS->", vars)
 	// generate the template
 	genBuf := bytes.NewBuffer(nil)
 	err = tmpl.ExecuteTemplate(genBuf, "proto", vars)
@@ -88,7 +86,6 @@ func getTemplates() (map[string]string, error) {
 		if path == "/" {
 			return nil
 		}
-		fmt.Println("path-->", path)
 		f, err := statikFS.Open(path)
 		if err != nil {
 			return err
@@ -100,6 +97,5 @@ func getTemplates() (map[string]string, error) {
 		data[path] = string(buf)
 		return nil
 	})
-	fmt.Println("data-->", data)
 	return data, nil
 }

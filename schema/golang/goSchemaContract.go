@@ -6,6 +6,7 @@ import (
 	"go/importer"
 	"go/parser"
 	"go/token"
+	"regexp"
 	"strings"
 
 	"go/types"
@@ -79,13 +80,24 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 
 	splitString := strings.Split(pkg.Scope().String(), "type cmd/parsedFile.go.")
 	elementMap := make(map[string]string)
+	methods := []*schema.Method{}
 	for _, dataMap := range splitString {
 		dataMap = strings.ReplaceAll(dataMap, "cmd/parsedFile.go.", "")
 		if strings.Contains(dataMap, "interface") {
 			elementMap["interface"] = dataMap
+			fmt.Println("elementMap-->", elementMap["interface"])
 			interfaceNameField := strings.Fields(elementMap["interface"])
 			interfaceName := interfaceNameField[0]
 			s.GoInterface = append(s.GoInterface, &schema.GoInterface{Name: schema.VarName(interfaceName)})
+			for _, method := range interfaceAllMethodNames(dataMap) {
+				methods = append(methods, &schema.Method{
+					Name: schema.VarName(method),
+					//Inputs:       inputs,
+					//Outputs:      outputs,
+				})
+			}
+			interfaceDef := s.GetInterfaceByName(interfaceName)
+			interfaceDef.Methods = methods
 		} else if strings.Contains(dataMap, "struct") {
 			elementMap["struct"] = dataMap
 			s.GoStructScope = append(s.GoStructScope, elementMap["struct"])
@@ -95,4 +107,22 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		}
 	}
 	return s, nil
+}
+
+func interfaceAllMethodNames(dataMap string) []string {
+	var listOfAllInterfaceMethods []string
+	re := regexp.MustCompile(`\{.*?\}`)
+	submatchall := re.FindAllString(dataMap, -1)
+
+	for _, element := range submatchall {
+		element = strings.Trim(element, "[{")
+		element = strings.Trim(element, "}]")
+		result := strings.Split(element, ";")
+		for i, v := range result {
+			methodName := strings.Split(v, "(")[0]
+			listOfAllInterfaceMethods = append(listOfAllInterfaceMethods, methodName)
+			fmt.Println(result[i], "--", methodName)
+		}
+	}
+	return listOfAllInterfaceMethods
 }

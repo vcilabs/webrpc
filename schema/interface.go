@@ -7,10 +7,10 @@ import (
 )
 
 type GoInterface struct {
-	Name    VarName   `json:"name"`
-	Methods []*Method `json:"methods"`
+	Name    VarName
+	Methods []*Method
 
-	Schema *WebRPCSchema `json:"-"` // denormalize/back-reference
+	Schema *WebRPCSchema
 }
 
 type Method struct {
