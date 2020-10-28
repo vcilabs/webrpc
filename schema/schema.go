@@ -121,6 +121,16 @@ func (s *WebRPCSchema) GetInterfaceByName(name string) *GoInterface {
 	return nil
 }
 
+// Here Only updated the method name and kept the body same as GetMessageByName()
+func (s *WebRPCSchema) GetStructByName(name string) *Message {
+	name = strings.ToLower(name)
+	for _, message := range s.Messages {
+		if strings.ToLower(string(message.Name)) == name {
+			return message
+		}
+	}
+	return nil
+}
 func (s *WebRPCSchema) HasFieldType(fieldType string) (bool, error) {
 	fieldType = strings.ToLower(fieldType)
 	_, ok := DataTypeFromString[fieldType]

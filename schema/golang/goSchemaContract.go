@@ -76,9 +76,8 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 
 	//TODO: update the code to add proper schema
 	s := &schema.WebRPCSchema{
-		//GoInterfaceScope: []string{},
-		GoInterface:     []*schema.GoInterface{},
-		GoStructScope:   []string{},
+		GoInterface: []*schema.GoInterface{},
+		//GoStructScope:   []string{},
 		GoDataTypeScope: []string{},
 	}
 
@@ -118,7 +117,38 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 				Name: schema.VarName(structName),
 				Type: schemaMessageTypeStruct,
 			})
-			s.GoStructScope = append(s.GoStructScope, elementMap["struct"])
+			//for _, initialStructName := range listOfStruct(dataMap) {
+			name := schema.VarName(structName)
+			structDef := s.GetStructByName(string(name))
+
+			if structDef == nil {
+				return nil, fmt.Errorf("unexpected error, could not find definition for: %v", name)
+			}
+
+			for _, def := range fieldsOfStruct(dataMap) {
+				splitField := strings.Split(def, " ")
+				fieldName, fieldType := splitField[0], splitField[1]
+
+				var varType schema.VarType
+				err := schema.ParseVarTypeExpr(s, fieldType, &varType)
+				if err != nil {
+					return nil, fmt.Errorf("unknown data type: %v", fieldType)
+				}
+
+				field := &schema.MessageField{
+					Name: schema.VarName(fieldName),
+					Type: &varType,
+				}
+				//TODO: Metadata addition
+				// for _, meta := range def.Meta() {
+				// 	key, val := meta.Left().String(), meta.Right().String()
+				// 	field.Meta = append(field.Meta, schema.MessageFieldMeta{
+				// 		key: val,
+				// 	})
+				// }
+				structDef.Fields = append(structDef.Fields, field)
+			}
+			//}
 		} else {
 			//TODO: Parse the other types
 			elementMap["datatype"] = dataMap
@@ -213,4 +243,21 @@ func buildArgumentsList(s *schema.WebRPCSchema, dataMap string, method string, c
 		}
 	}
 	return output, nil
+}
+
+func fieldsOfStruct(dataMap string) []string {
+	var listOfFields []string
+	interfaceRegex := regexp.MustCompile(`\{.*?\}`)
+	argumentMatch := interfaceRegex.FindAllString(dataMap, -1)
+
+	for _, argList := range argumentMatch {
+		argList = strings.Trim(argList, "[{")
+		argList = strings.Trim(argList, "}]")
+		result := strings.Split(argList, ";")
+		for _, v := range result {
+			v = strings.TrimSpace(v)
+			listOfFields = append(listOfFields, v)
+		}
+	}
+	return listOfFields
 }
