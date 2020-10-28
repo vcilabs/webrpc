@@ -77,5 +77,23 @@
     {{- end}}
   }
 {{end}}
+{{if .GoInterface}}
+  {{range .GoInterface}}
+    type {{.Name}} interface {
+      {{- range .Methods}}
+        {{.Name}}({{.Inputs | methodInputs}}) ({{.Outputs | methodOutputs}})
+      {{- end}}
+    }
+  {{end}}
+  var WebRPCInterface = map[string][]string{
+    {{- range .GoInterface}}
+      "{{.Name}}": {
+        {{- range .Methods}}
+          "{{.Name}}",
+        {{- end}}
+      },
+    {{- end}}
+  }
+{{end}}
 
 {{end}}
