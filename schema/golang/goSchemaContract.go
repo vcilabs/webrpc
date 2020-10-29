@@ -7,6 +7,7 @@ import (
 	"go/parser"
 	"go/token"
 	"regexp"
+	"sort"
 	"strings"
 
 	"go/types"
@@ -18,6 +19,7 @@ import (
 
 var (
 	schemaMessageTypeStruct = schema.MessageType("struct")
+	schemaMessageTypeEnum   = schema.MessageType("enum")
 )
 
 type Parser struct {
@@ -80,10 +82,12 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		//GoStructScope:   []string{},
 		GoDataTypeScope: []string{},
 	}
-
+	//imports := pkg.Imports()
+	//fmt.Println("imports-->", imports)
 	splitString := strings.Split(pkg.Scope().String(), "type cmd/parsedFile.go.")
 	elementMap := make(map[string]string)
 	methods := []*schema.Method{}
+	sort.Sort(ByLen(splitString))
 	for _, dataMap := range splitString {
 		dataMap = strings.ReplaceAll(dataMap, "cmd/parsedFile.go.", "")
 		if strings.Contains(dataMap, "interface") {
@@ -109,7 +113,6 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 			interfaceDef := s.GetInterfaceByName(interfaceName)
 			interfaceDef.Methods = methods
 		} else if strings.Contains(dataMap, "struct") {
-			//TODO: Parse the structs
 			elementMap["struct"] = dataMap
 			StructNameField := strings.Fields(elementMap["struct"])
 			structName := StructNameField[0]
@@ -117,14 +120,11 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 				Name: schema.VarName(structName),
 				Type: schemaMessageTypeStruct,
 			})
-			//for _, initialStructName := range listOfStruct(dataMap) {
 			name := schema.VarName(structName)
 			structDef := s.GetStructByName(string(name))
-
 			if structDef == nil {
 				return nil, fmt.Errorf("unexpected error, could not find definition for: %v", name)
 			}
-
 			for _, def := range fieldsOfStruct(dataMap) {
 				splitField := strings.Split(def, " ")
 				fieldName, fieldType := splitField[0], splitField[1]
@@ -148,11 +148,14 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 				// }
 				structDef.Fields = append(structDef.Fields, field)
 			}
-			//}
-		} else {
-			//TODO: Parse the other types
-			elementMap["datatype"] = dataMap
-			s.GoDataTypeScope = append(s.GoDataTypeScope, elementMap["datatype"])
+		} else if !strings.Contains(dataMap, "interface") || !strings.Contains(dataMap, "struct") {
+			//TODO: Parse the other types (similar to enum in RIDL)
+			splitDataMap := strings.Split(dataMap, " ")
+			s.Messages = append(s.Messages, &schema.Message{
+				Name:   schema.VarName(splitDataMap[0]),
+				Type:   schema.MessageType(splitDataMap[1]), //schemaMessageTypeEnum,
+				Fields: []*schema.MessageField{},
+			})
 		}
 	}
 	return s, nil
@@ -247,8 +250,8 @@ func buildArgumentsList(s *schema.WebRPCSchema, dataMap string, method string, c
 
 func fieldsOfStruct(dataMap string) []string {
 	var listOfFields []string
-	interfaceRegex := regexp.MustCompile(`\{.*?\}`)
-	argumentMatch := interfaceRegex.FindAllString(dataMap, -1)
+	structRegex := regexp.MustCompile(`\{.*?\}`)
+	argumentMatch := structRegex.FindAllString(dataMap, -1)
 
 	for _, argList := range argumentMatch {
 		argList = strings.Trim(argList, "[{")
@@ -260,4 +263,18 @@ func fieldsOfStruct(dataMap string) []string {
 		}
 	}
 	return listOfFields
+}
+
+type ByLen []string
+
+func (a ByLen) Len() int {
+	return len(a)
+}
+
+func (a ByLen) Less(i, j int) bool {
+	return len(a[i]) < len(a[j])
+}
+
+func (a ByLen) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
 }
