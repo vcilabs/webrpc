@@ -6,7 +6,7 @@
 //
 
 {{range .Messages}}
-  {{if .Type | isAdvance}}
+  {{if .Type | isAdvancedType}}
     type {{.Name}} {{.EnumType}}
   {{end}}
   {{if .Type | isEnum}}
