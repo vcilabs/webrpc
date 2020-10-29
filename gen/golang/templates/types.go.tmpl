@@ -6,6 +6,9 @@
 //
 
 {{range .Messages}}
+  {{if .Type | isAdvance}}
+    type {{.Name}} {{.EnumType}}
+  {{end}}
   {{if .Type | isEnum}}
     {{$enumName := .Name}}
     {{$enumType := .EnumType}}

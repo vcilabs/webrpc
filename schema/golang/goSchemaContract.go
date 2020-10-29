@@ -18,8 +18,9 @@ import (
 )
 
 var (
-	schemaMessageTypeStruct = schema.MessageType("struct")
-	schemaMessageTypeEnum   = schema.MessageType("enum")
+	schemaMessageTypeStruct  = schema.MessageType("struct")
+	schemaMessageTypeEnum    = schema.MessageType("enum")
+	schemaMessageTypeAdvance = schema.MessageType("advance")
 )
 
 type Parser struct {
@@ -83,7 +84,6 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		GoDataTypeScope: []string{},
 	}
 	//imports := pkg.Imports()
-	//fmt.Println("imports-->", imports)
 	splitString := strings.Split(pkg.Scope().String(), "type cmd/parsedFile.go.")
 	elementMap := make(map[string]string)
 	methods := []*schema.Method{}
@@ -148,13 +148,21 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 				// }
 				structDef.Fields = append(structDef.Fields, field)
 			}
-		} else if !strings.Contains(dataMap, "interface") || !strings.Contains(dataMap, "struct") {
-			//TODO: Parse the other types (similar to enum in RIDL)
+		} else if (!strings.Contains(dataMap, "interface") || !strings.Contains(dataMap, "struct")) && !strings.Contains(dataMap, "cmd/parsedFile.go") {
 			splitDataMap := strings.Split(dataMap, " ")
+			keyName := splitDataMap[0]
+			typeArgRegex := regexp.MustCompile(`^[\w.]+`)
+			splitDataMapArgument := typeArgRegex.FindAllString(splitDataMap[1], 1)
+			typeName := splitDataMapArgument[0]
+			var enumType schema.VarType
+			err := schema.ParseVarTypeExpr(s, typeName, &enumType)
+			if err != nil {
+				return nil, fmt.Errorf("unknown data type: %v", typeName)
+			}
 			s.Messages = append(s.Messages, &schema.Message{
-				Name:   schema.VarName(splitDataMap[0]),
-				Type:   schema.MessageType(splitDataMap[1]), //schemaMessageTypeEnum,
-				Fields: []*schema.MessageField{},
+				Name:     schema.VarName(keyName),
+				Type:     schemaMessageTypeAdvance,
+				EnumType: &enumType,
 			})
 		}
 	}

@@ -268,6 +268,10 @@ func isStruct(t schema.MessageType) bool {
 	return t == "struct"
 }
 
+func isAdvance(t schema.MessageType) bool {
+	return t == "advance"
+}
+
 func exportedField(in *schema.MessageField) (string, error) {
 	s := string(in.Name)
 	s = strings.ToUpper(s[0:1]) + s[1:]
@@ -334,6 +338,7 @@ func templateFuncMap(proto *schema.WebRPCSchema) map[string]interface{} {
 		"argsList":              argsList,
 		"commaIfLen":            commaIfLen,
 		"isStruct":              isStruct,
+		"isAdvance":             isAdvance,
 		"isEnum":                isEnum,
 		"exportedField":         exportedField,
 		"downcaseName":          downcaseName,
