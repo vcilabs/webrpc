@@ -91,7 +91,7 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		// test for complex datatype
 		if isListExpr(expr) {
 			dataType = T_List
-		} else if isMapExpr(expr) {
+		} else if isMapExpr(expr) || isGoSchemaMapExpr(expr) {
 			dataType = T_Map
 		}
 	}
@@ -113,10 +113,20 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		}
 
 	case T_Map:
+		var key string
+		var value string
+		var err error
 		// parse map expr
-		key, value, err := parseMapExpr(expr)
-		if err != nil {
-			return err
+		if schema.SchemaType == "go" {
+			key, value, err = parseGoSchemaMapExpr(expr)
+			if err != nil {
+				return err
+			}
+		} else {
+			key, value, err = parseMapExpr(expr)
+			if err != nil {
+				return err
+			}
 		}
 
 		keyDataType, ok := DataTypeFromString[key]
@@ -183,6 +193,23 @@ func parseMapExpr(expr string) (string, string, error) {
 	return key, value, nil
 }
 
+func parseGoSchemaMapExpr(expr string) (string, string, error) {
+	if !isGoSchemaMapExpr(expr) {
+		return "", "", errors.Errorf("schema error: invalid map expr for '%s'", expr)
+	}
+
+	mapKeyword := DataTypeToString[T_Map]
+	expr = expr[len(mapKeyword):]
+	key := getMapKey(expr)
+	value := strings.TrimPrefix(expr, "["+key+"]")
+
+	if !isValidVarKeyType(key) {
+		return "", "", errors.Errorf("schema error: invalid map key '%s' for '%s'", key, expr)
+	}
+
+	return key, value, nil
+}
+
 func buildVarTypeExpr(vt *VarType, expr string) string {
 	switch vt.Type {
 	case T_Unknown:
@@ -214,6 +241,11 @@ func isListExpr(expr string) bool {
 
 func isMapExpr(expr string) bool {
 	mapTest := DataTypeToString[T_Map] + "<"
+	return strings.HasPrefix(expr, mapTest)
+}
+
+func isGoSchemaMapExpr(expr string) bool {
+	mapTest := DataTypeToString[T_Map] + "["
 	return strings.HasPrefix(expr, mapTest)
 }
 
@@ -249,4 +281,15 @@ func isValidVarType(s string, allowedList []DataType) bool {
 		}
 	}
 	return false
+}
+
+func getMapKey(expr string) string {
+	i := strings.Index(expr, "[")
+	if i >= 0 {
+		j := strings.Index(expr, "]")
+		if j >= 0 {
+			return expr[i+1 : j]
+		}
+	}
+	return ""
 }

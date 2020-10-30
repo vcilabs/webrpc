@@ -19,7 +19,6 @@ import (
 
 var (
 	schemaMessageTypeStruct  = schema.MessageType("struct")
-	schemaMessageTypeEnum    = schema.MessageType("enum")
 	schemaMessageTypeAdvance = schema.MessageType("advance")
 )
 
@@ -80,14 +79,13 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 	//TODO: update the code to add proper schema
 	s := &schema.WebRPCSchema{
 		GoInterface: []*schema.GoInterface{},
-		//GoStructScope:   []string{},
-		GoDataTypeScope: []string{},
 	}
 	//imports := pkg.Imports()
 	splitString := strings.Split(pkg.Scope().String(), "type cmd/parsedFile.go.")
 	elementMap := make(map[string]string)
 	methods := []*schema.Method{}
 	sort.Sort(ByLen(splitString))
+	s.SchemaType = "go"
 	for _, dataMap := range splitString {
 		dataMap = strings.ReplaceAll(dataMap, "cmd/parsedFile.go.", "")
 		if strings.Contains(dataMap, "interface") {
@@ -273,6 +271,9 @@ func fieldsOfStruct(dataMap string) []string {
 	return listOfFields
 }
 
+//ByLen Sort the string in ascending order by count of each string
+//Case: string:= ["abcd", "a", "abc", "ab"]
+//o/p:  string:= ["a", "ab", "abc", "abcd"]
 type ByLen []string
 
 func (a ByLen) Len() int {

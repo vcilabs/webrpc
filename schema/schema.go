@@ -19,14 +19,12 @@ type WebRPCSchema struct {
 	WebRPCVersion string    `json:"webrpc"`
 	Name          string    `json:"name"`
 	SchemaVersion string    `json:"version"`
+	SchemaType    string    `json:"schematype"`
 	Imports       []*Import `json:"imports"`
 
-	Messages         []*Message     `json:"messages"`
-	Services         []*Service     `json:"services"`
-	GoInterface      []*GoInterface `json:"goInterface"`
-	GoInterfaceScope []string       `json:"goInterfacescope"`
-	GoStructScope    []string       `json:"gostructscope"`
-	GoDataTypeScope  []string       `json:"godatatypescope"`
+	Messages    []*Message     `json:"messages"`
+	Services    []*Service     `json:"services"`
+	GoInterface []*GoInterface `json:"goInterface"`
 }
 
 type Import struct {

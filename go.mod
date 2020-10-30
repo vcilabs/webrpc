@@ -3,7 +3,7 @@ module github.com/webrpc/webrpc
 go 1.13
 
 require (
-	github.com/go-chi/chi v4.0.2+incompatible
+	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/example v0.0.0-20170904185048-46695d81d1fa // indirect
 	github.com/goware/statik v0.2.0
 	github.com/pkg/errors v0.9.1
