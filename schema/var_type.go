@@ -15,6 +15,8 @@ type VarType struct {
 	List   *VarListType
 	Map    *VarMapType
 	Struct *VarStructType
+
+	UserDefined *VarUserDefinedType
 }
 
 func (t *VarType) String() string {
@@ -78,6 +80,10 @@ type VarStructType struct {
 	Message *Message
 }
 
+type VarUserDefinedType struct {
+	Name string
+}
+
 func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 	if expr == "" {
 		return nil
@@ -93,12 +99,12 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 			dataType = T_List
 		} else if isMapExpr(expr) || isGoSchemaMapExpr(expr) {
 			dataType = T_Map
+		} else {
+			dataType = T_UserDefined
 		}
 	}
-
 	// Set core data type
 	vt.Type = dataType
-
 	// For complex types, keep parsing
 	switch vt.Type {
 	case T_List:
@@ -143,6 +149,11 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		if err != nil {
 			return err
 		}
+
+	case T_UserDefined:
+		userDefinedExpr := expr
+		vt.Type = T_UserDefined
+		vt.UserDefined = &VarUserDefinedType{Name: userDefinedExpr}
 
 	case T_Unknown:
 
@@ -227,6 +238,9 @@ func buildVarTypeExpr(vt *VarType, expr string) string {
 		expr += vt.Struct.Name
 		return expr
 
+	case T_UserDefined:
+		expr += vt.UserDefined.Name
+		return expr
 	default:
 		// basic type
 		expr += vt.Type.String()

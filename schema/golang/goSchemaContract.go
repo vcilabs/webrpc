@@ -76,16 +76,24 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		log.Fatal(err) // type error
 	}
 
-	//TODO: update the code to add proper schema
 	s := &schema.WebRPCSchema{
 		GoInterface: []*schema.GoInterface{},
 	}
-	//imports := pkg.Imports()
+	s.SchemaType = "go"
+	additionalimports := pkg.Imports()
+	for _, additionalimport := range additionalimports {
+		regexForListOfImports := regexp.MustCompile(`\(.*?\)`)
+		listOfImports := regexForListOfImports.FindAllString(additionalimport.String(), -1)
+		listOfImports[0] = strings.Trim(listOfImports[0], "[(")
+		listOfImports[0] = strings.Trim(listOfImports[0], ")]")
+		s.Imports = append(s.Imports, &schema.Import{
+			Path: listOfImports[0],
+		})
+	}
 	splitString := strings.Split(pkg.Scope().String(), "type cmd/parsedFile.go.")
 	elementMap := make(map[string]string)
 	methods := []*schema.Method{}
 	sort.Sort(ByLen(splitString))
-	s.SchemaType = "go"
 	for _, dataMap := range splitString {
 		dataMap = strings.ReplaceAll(dataMap, "cmd/parsedFile.go.", "")
 		if strings.Contains(dataMap, "interface") {

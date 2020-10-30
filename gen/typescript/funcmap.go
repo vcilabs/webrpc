@@ -144,10 +144,6 @@ func isStruct(t schema.MessageType) bool {
 	return t == "struct"
 }
 
-func isAdvance(t schema.MessageType) bool {
-	return t == "advance"
-}
-
 func exportedField(in schema.VarName) (string, error) {
 	return string(in), nil
 }

@@ -76,10 +76,6 @@ func isStruct(t schema.MessageType) bool {
 	return t == "struct"
 }
 
-func isAdvance(t schema.MessageType) bool {
-	return t == "advance"
-}
-
 func exportedField(in schema.VarName) (string, error) {
 	s := string(in)
 	return strings.ToUpper(s[0:1]) + s[1:], nil
@@ -191,7 +187,6 @@ func templateFuncMap(opts gen.TargetOptions) map[string]interface{} {
 		"methodInputs":         methodInputs,
 		"isStruct":             isStruct,
 		"isEnum":               isEnum,
-		"isAdvance":            isAdvance,
 		"listComma":            listComma,
 		"exportedField":        exportedField,
 		"exportedJSONField":    exportedJSONField,
