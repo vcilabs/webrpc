@@ -18,24 +18,23 @@ import (
   "io"
   "net/url"
   {{range .Imports}}
-  {{.Path}}
-  {{end}}
+  {{.Path}}{{end}}
 )
-
-// WebRPC description and code-gen version (Return value generated in case of RIDL file only)
+{{ if .WebRPCVersion}}
+// WebRPC description and code-gen version
 func WebRPCVersion() string {
   return "{{.WebRPCVersion}}"
-}
-
-// Schema version of your schema (Return value generated in case of RIDL file only)
+}{{end}}
+{{if .SchemaVersion}}
+// Schema version of your schema
 func WebRPCSchemaVersion() string {
   return "{{.SchemaVersion}}"
-}
-
+}{{end}}
+{{if .SchemaHash}}
 // Schema hash generated from your schema
 func WebRPCSchemaHash() string {
   return "{{.SchemaHash}}"
-}
+}{{end}}
 
 {{template "types" .}}
 

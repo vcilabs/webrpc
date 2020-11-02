@@ -1,5 +1,5 @@
 {{define "client"}}
-{{if or .Services .GoInterface}}
+{{if .Services}}
 //
 // Client
 //
@@ -8,10 +8,6 @@
 const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
 {{end}}
 
-{{range .GoInterface}}
-const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
-{{end}}
- 
 {{range .Services}}
   {{ $serviceName := .Name | clientServiceName}}
   type {{$serviceName}} struct {
@@ -58,54 +54,6 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
     }
   {{end}}
 {{end}}
-
-{{range .GoInterface}}
-  {{ $InterfaceName := .Name | clientServiceName}}
-  type {{$InterfaceName}} struct {
-    client HTTPClient
-    urls   [{{.Methods | countMethods}}]string
-  }
-
-  func {{.Name | newClientServiceName }}(addr string, client HTTPClient) {{.Name}} {
-    prefix := urlBase(addr) + {{.Name | constPathPrefix}}
-    urls := [{{.Methods | countMethods}}]string{
-      {{- range .Methods}}
-      prefix + "{{.Name}}",
-      {{- end}}
-    }
-    return &{{$InterfaceName}}{
-      client: client,
-      urls:   urls,
-    }
-  }
-
-  {{range $i, $method := .Methods}}
-    func (c *{{$InterfaceName}}) {{.Name}}({{.Inputs | methodInputs}}) ({{.Outputs | methodOutputs }}) {
-      {{- $inputVar := "nil" -}}
-      {{- $outputVar := "nil" -}}
-      {{- if .Inputs | len}}
-      {{- $inputVar = "in"}}
-      in := struct {
-        {{- range $i, $input := .Inputs}}
-          Arg{{$i}} {{$input | methodArgType}} `json:"{{$input.Name | downcaseName}}"`
-        {{- end}}          
-      }{ {{.Inputs | methodArgNames}} }
-      {{- end}}
-      {{- if .Outputs | len}}
-      {{- $outputVar = "&out"}}
-      out := struct {
-        {{- range $i, $output := .Outputs}}
-          Ret{{$i}} {{$output | methodArgType}} `json:"{{$output.Name | downcaseName}}"`
-        {{- end}}          
-      }{}
-    {{- end}}
-
-      err := doJSONRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
-      return {{argsList .Outputs "out.Ret"}}{{commaIfLen .Outputs}} err
-    }
-  {{end}}
-{{end}}
-
 
 // HTTPClient is the interface used by generated clients to send HTTP requests.
 // It is fulfilled by *(net/http).Client, which is sufficient for most users.
