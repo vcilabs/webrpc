@@ -281,6 +281,7 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 							}
 						}
 					}
+
 					return output, nil
 				}
 			}
@@ -309,8 +310,8 @@ func fieldsOfStruct(goType string) []string {
 }
 
 //ByLen Sort the string in ascending order by count of each string
-//Case: string:= ["abcd", "a", "abc", "ab"]
-//o/p:  string:= ["a", "ab", "abc", "abcd"]
+//Case: string:= ["abcd", "p", "xyz", "ab"]
+//o/p:  string:= ["p", "ab", "xyz", "abcd"]
 type ByLen []string
 
 func (a ByLen) Len() int {
