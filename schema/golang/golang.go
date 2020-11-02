@@ -87,7 +87,6 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "Invalid type in the file: "+fileName)
 	}
-
 	s := &schema.WebRPCSchema{}
 	//Add the schema type to be used in var_type.go to parse the go maps
 	s.SchemaType = "go"
@@ -153,13 +152,11 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 			for _, def := range fieldsOfStruct(goType) {
 				splitField := strings.Split(def, " ")
 				fieldName, fieldType := splitField[0], splitField[1]
-
 				var varType schema.VarType
 				err := schema.ParseVarTypeExpr(s, fieldType, &varType)
 				if err != nil {
 					return nil, fmt.Errorf("unknown data type: %v", fieldType)
 				}
-
 				field := &schema.MessageField{
 					Name: schema.VarName(fieldName),
 					Type: &varType,
@@ -193,7 +190,6 @@ func interfaceAllMethodNames(goType string) []string {
 	var listOfAllInterfaceMethods []string
 	re := regexp.MustCompile(`\{.*?\}`)
 	submatchall := re.FindAllString(goType, -1)
-
 	for _, element := range submatchall {
 		element = strings.Trim(element, "[{")
 		element = strings.Trim(element, "}]")
@@ -223,7 +219,6 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 	interfaceRegex := regexp.MustCompile(`\{.*?\}`)
 	argsRegex := regexp.MustCompile(`\(.*?\)`)
 	argumentMatch := interfaceRegex.FindAllString(goType, -1)
-
 	for _, argList := range argumentMatch {
 		argList = strings.Trim(argList, "[{")
 		argList = strings.Trim(argList, "}]")
@@ -281,7 +276,6 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 							}
 						}
 					}
-
 					return output, nil
 				}
 			}
