@@ -1,7 +1,5 @@
 package ridl
 
-import "fmt"
-
 // NodeType represents the type of a parser tree node.
 type NodeType uint
 
@@ -106,7 +104,6 @@ func (rn RootNode) Enums() []*EnumNode {
 }
 
 func (rn RootNode) Services() []*ServiceNode {
-	fmt.Println("ServiceNodeType", ServiceNodeType)
 	nodes := rn.Filter(ServiceNodeType)
 
 	serviceNodes := make([]*ServiceNode, 0, len(nodes))

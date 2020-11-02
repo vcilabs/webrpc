@@ -189,10 +189,10 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 }
 
 // interfaceAllMethodNames retuns all the method names present in an interface
-func interfaceAllMethodNames(dataMap string) []string {
+func interfaceAllMethodNames(goType string) []string {
 	var listOfAllInterfaceMethods []string
 	re := regexp.MustCompile(`\{.*?\}`)
-	submatchall := re.FindAllString(dataMap, -1)
+	submatchall := re.FindAllString(goType, -1)
 
 	for _, element := range submatchall {
 		element = strings.Trim(element, "[{")
@@ -213,11 +213,16 @@ func interfaceAllMethodNames(dataMap string) []string {
 //If checkType is "isInputArgs", trim "ctx context.Context" as it is common for  RPC and append the name and variable type for rest of the input arguments
 //If checkType is "isOutputArgs", skip argument "error" as it is common for RPC and append the type i.e string, int etc for rest of the output arguments
 //NOTE: for input we take care for both Name and type. But since in output we only have return type so we read only type
-func buildArgumentsList(s *schema.WebRPCSchema, dataMap string, method string, checkType string) ([]*schema.MethodArgument, error) {
+//Arguments used are as follows:
+//         a) WebRPC schema object needed for ParseVarTypeExpr function
+//         b) goType holds the input/output arguments of method from interface
+//         c) method holds the method name. It is only used to filter the arguments and not parse all the arguments of interface.(Added only to save parsing time)
+//         d) checkType is a string that check we need input args or output args
+func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, checkType string) ([]*schema.MethodArgument, error) {
 	output := []*schema.MethodArgument{}
 	interfaceRegex := regexp.MustCompile(`\{.*?\}`)
 	argsRegex := regexp.MustCompile(`\(.*?\)`)
-	argumentMatch := interfaceRegex.FindAllString(dataMap, -1)
+	argumentMatch := interfaceRegex.FindAllString(goType, -1)
 
 	for _, argList := range argumentMatch {
 		argList = strings.Trim(argList, "[{")
