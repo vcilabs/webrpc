@@ -2,6 +2,7 @@ package contract
 
 import (
 	"context"
+	"regexp"
 )
 
 type Author struct {
@@ -19,7 +20,7 @@ type Book struct {
 }
 
 type Library interface {
-	GetBooks(ctx context.Context) ([]Book, error)
+	GetBooks(ctx context.Context) ([]Book, string, error)
 	BorrowBook(ctx context.Context, BookID int64) error
-	GetBookAuthor(ctx context.Context, BookID int64) (Author, error)
+	GetBookAuthor(ctx context.Context, BookID int64) (Author, map[string]string, regexp.Regexp, error)
 }
