@@ -88,8 +88,10 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		return nil, errors.Wrap(err, "Invalid type in the file: "+fileName)
 	}
 	s := &schema.WebRPCSchema{}
+	ext := filepath.Ext(path)
+
 	//Add the schema type to be used in var_type.go to parse the go maps
-	s.SchemaType = "go"
+	s.SchemaType = strings.TrimPrefix(ext, ".")
 	// This reads the imports from the go file and adds to Imports schema
 	additionalimports := pkg.Imports()
 	for _, additionalimport := range additionalimports {

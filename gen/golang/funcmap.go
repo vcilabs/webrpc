@@ -271,15 +271,6 @@ func isStruct(t schema.MessageType) bool {
 	return t == "struct"
 }
 
-// // Get the additional imports for go schema
-// func additionalGoImports(im schema.Import) string {
-// 	path := string(im.Path)
-// 	if path != "" {
-// 		return path
-// 	}
-// 	return ""
-// }
-
 func isAdvancedType(t schema.MessageType) bool {
 	return t == "advance"
 }

@@ -78,6 +78,9 @@ func fieldType(in *schema.VarType) (string, error) {
 	case schema.T_Struct:
 		return in.Struct.Name, nil
 
+	case schema.T_UserDefined:
+		return in.UserDefined.Name, nil
+
 	default:
 		if fieldTypeMap[in.Type] != "" {
 			return fieldTypeMap[in.Type], nil
@@ -107,19 +110,23 @@ func methodInputType(in *schema.MethodArgument) string {
 }
 
 func methodArgumentInputInterfaceName(in *schema.Method) string {
-	if len(in.Service.Schema.Services) == 1 {
-		return fmt.Sprintf("%s%s", in.Name, "Args")
-	} else {
-		return fmt.Sprintf("%s%s%s", in.Service.Name, in.Name, "Args")
-	}
+	// Commented to make it work for typescript
+	// if len(in.Service.Schema.Services) == 1 {
+	// 	return fmt.Sprintf("%s%s", in.Name, "Args")
+	// } else {
+	// 	return fmt.Sprintf("%s%s%s", in.Service.Name, in.Name, "Args")
+	// }
+	return fmt.Sprintf("%s%s", in.Name, "Args")
 }
 
 func methodArgumentOutputInterfaceName(in *schema.Method) string {
-	if len(in.Service.Schema.Services) == 1 {
-		return fmt.Sprintf("%s%s", in.Name, "Return")
-	} else {
-		return fmt.Sprintf("%s%s%s", in.Service.Name, in.Name, "Return")
-	}
+	// Commented to make it work for typescript
+	// if len(in.Service.Schema.Services) == 1 {
+	// 	return fmt.Sprintf("%s%s", in.Name, "Return")
+	// } else {
+	// 	return fmt.Sprintf("%s%s%s", in.Service.Name, in.Name, "Return")
+	// }
+	return fmt.Sprintf("%s%s", in.Name, "Return")
 }
 
 func methodInputs(in *schema.Method) (string, error) {
@@ -142,6 +149,10 @@ func methodName(in interface{}) string {
 
 func isStruct(t schema.MessageType) bool {
 	return t == "struct"
+}
+
+func isAdvancedType(t schema.MessageType) bool {
+	return t == "advance"
 }
 
 func exportedField(in schema.VarName) (string, error) {
@@ -269,6 +280,7 @@ var templateFuncMap = map[string]interface{}{
 	"exportedJSONField":                 exportedJSONField,
 	"newOutputArgResponse":              newOutputArgResponse,
 	"downcaseName":                      downcaseName,
+	"isAdvancedType":                    isAdvancedType,
 	"serverServiceName":                 serverServiceName,
 	"methodArgType":                     methodArgType,
 	"jsFieldType":                       jsFieldType,
