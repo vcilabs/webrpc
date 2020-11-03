@@ -123,7 +123,7 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		var value string
 		var err error
 		// parse map expr
-		if schema.SchemaType == "go" || schema.SchemaType == "ts" {
+		if schema.SchemaType == "go" {
 			key, value, err = parseGoSchemaMapExpr(expr)
 			if err != nil {
 				return err
