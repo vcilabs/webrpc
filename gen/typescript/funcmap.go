@@ -46,6 +46,9 @@ func jsFieldType(in *schema.VarType) (string, error) {
 	case schema.T_Struct:
 		return in.Struct.Name, nil
 
+	case schema.T_UserDefined:
+		return in.UserDefined.Name, nil
+
 	default:
 		if fieldTypeMap[in.Type] != "" {
 			return fieldTypeMap[in.Type], nil
