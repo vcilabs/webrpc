@@ -275,7 +275,7 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 									return nil, fmt.Errorf("unknown data type: %v", resultsNew)
 								}
 								methodArgument := &schema.MethodArgument{
-									Name: schema.VarName("respose"),
+									Name: schema.VarName("response"),
 									Type: &varType,
 								}
 								output = append(output, methodArgument)
