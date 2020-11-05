@@ -20,6 +20,7 @@ import (
 
 var (
 	schemaMessageTypeStruct  = schema.MessageType("struct")
+	schemaMessageTypeEnum    = schema.MessageType("enum")
 	schemaMessageTypeAdvance = schema.MessageType("advance")
 )
 
@@ -179,7 +180,7 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 			}
 			s.Messages = append(s.Messages, &schema.Message{
 				Name:     schema.VarName(keyName),
-				Type:     schemaMessageTypeAdvance,
+				Type:     schemaMessageTypeEnum,
 				EnumType: &enumType,
 			})
 		}
