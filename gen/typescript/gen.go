@@ -20,6 +20,8 @@ func init() {
 type generator struct{}
 
 func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (string, error) {
+	var schemaHash = ""
+	var err error
 	// Get templates from `embed` asset package
 	// NOTE: make sure to `go generate` whenever you change the files in `templates/` folder
 	templates, err := getTemplates()
@@ -40,9 +42,11 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	}
 
 	// generate deterministic schema hash of the proto file
-	schemaHash, err := proto.SchemaHash()
-	if err != nil {
-		return "", err
+	if proto.SchemaType != "go" {
+		schemaHash, err = proto.SchemaHash()
+		if err != nil {
+			return "", err
+		}
 	}
 
 	// template vars
