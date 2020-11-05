@@ -153,6 +153,9 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 			}
 			//Read the struct fields and update the MessageFields
 			for _, def := range fieldsOfStruct(goType) {
+				if len(def) < 1 {
+					continue
+				}
 				splitField := strings.Split(def, " ")
 				fieldName, fieldType := splitField[0], splitField[1]
 				var varType schema.VarType
@@ -272,7 +275,7 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 									return nil, fmt.Errorf("unknown data type: %v", resultsNew)
 								}
 								methodArgument := &schema.MethodArgument{
-									Name: schema.VarName(resultsNew),
+									Name: schema.VarName("respose"),
 									Type: &varType,
 								}
 								output = append(output, methodArgument)
