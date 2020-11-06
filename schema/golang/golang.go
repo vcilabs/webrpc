@@ -6,6 +6,7 @@ import (
 	"go/importer"
 	"go/parser"
 	"go/token"
+	"log"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -115,7 +116,7 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 		//Replace the additional string with blank so as to get the valid desired content while parsing the types
 		goType = strings.ReplaceAll(goType, "cmd/"+fileName+".", "")
 		//Read the type Interface and update the name, inputs and outputs
-		if strings.Contains(goType, "interface") {
+		if strings.Contains(goType, " interface") {
 			elementMap["interface"] = goType
 			interfaceNameField := strings.Fields(elementMap["interface"])
 			interfaceName := interfaceNameField[0]
@@ -169,7 +170,7 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 				}
 				structDef.Fields = append(structDef.Fields, field)
 			}
-		} else if (!strings.Contains(goType, "interface") || !strings.Contains(goType, "struct")) && !strings.Contains(goType, "cmd/"+fileName) {
+		} else if (!strings.Contains(goType, " interface") || !strings.Contains(goType, "struct")) && !strings.Contains(goType, "cmd/"+fileName) {
 			// Handle advanced types
 			splitDataMap := strings.Split(goType, " ")
 			keyName := splitDataMap[0]
@@ -194,7 +195,7 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 // interfaceAllMethodNames retuns all the method names present in an interface
 func interfaceAllMethodNames(goType string) []string {
 	var listOfAllInterfaceMethods []string
-	re := regexp.MustCompile(`\{.*?\}`)
+	re := regexp.MustCompile(`\{.*\}`)
 	submatchall := re.FindAllString(goType, -1)
 	for _, element := range submatchall {
 		element = strings.Trim(element, "[{")
@@ -222,7 +223,7 @@ func interfaceAllMethodNames(goType string) []string {
 //         d) checkType is a string that check we need input args or output args
 func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, checkType string) ([]*schema.MethodArgument, error) {
 	output := []*schema.MethodArgument{}
-	interfaceRegex := regexp.MustCompile(`\{.*?\}`)
+	interfaceRegex := regexp.MustCompile(`\{.*\}`)
 	argsRegex := regexp.MustCompile(`\(.*?\)`)
 	argumentMatch := interfaceRegex.FindAllString(goType, -1)
 	for _, argList := range argumentMatch {
@@ -274,8 +275,15 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 								if err != nil {
 									return nil, fmt.Errorf("unknown data type: %v", resultsNew)
 								}
+								// Make a Regex to say we only want letters and numbers
+								reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+								if err != nil {
+									log.Fatal(err)
+								}
+								responseArg := reg.ReplaceAllString(resultsNew, "")
+								responseArg = strings.ToLower(responseArg)
 								methodArgument := &schema.MethodArgument{
-									Name: schema.VarName("response"),
+									Name: schema.VarName(responseArg),
 									Type: &varType,
 								}
 								output = append(output, methodArgument)
@@ -291,12 +299,11 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 }
 
 //fieldsOfStruct returs the content of struct.
-//For example "Author struct {ID  int64, ... }" will return "ID int64", "..." as list of Fields
+//For example "Author struct {ID int64, ... }" will return "ID int64", "..." as list of Fields
 func fieldsOfStruct(goType string) []string {
 	var listOfFields []string
-	structRegex := regexp.MustCompile(`\{.*?\}`)
+	structRegex := regexp.MustCompile(`\{.*\}`)
 	argumentMatch := structRegex.FindAllString(goType, -1)
-
 	for _, argList := range argumentMatch {
 		argList = strings.Trim(argList, "[{")
 		argList = strings.Trim(argList, "}]")

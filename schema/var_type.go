@@ -143,8 +143,13 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		// create sub-type object for map
 		vt.Map = &VarMapType{Key: keyDataType, Value: &VarType{}}
 
-		// shift expr and keep parsing
-		expr = value
+		if schema.SchemaType == "go" && value == "interface{" {
+			// shift expr and keep parsing
+			expr = value + "}"
+		} else {
+			// shift expr and keep parsing
+			expr = value
+		}
 		err = ParseVarTypeExpr(schema, expr, vt.Map.Value)
 		if err != nil {
 			return err
@@ -213,7 +218,6 @@ func parseGoSchemaMapExpr(expr string) (string, string, error) {
 	expr = expr[len(mapKeyword):]
 	key := getMapKey(expr)
 	value := strings.TrimPrefix(expr, "["+key+"]")
-
 	if !isValidVarKeyType(key) {
 		return "", "", errors.Errorf("schema error: invalid map key '%s' for '%s'", key, expr)
 	}
