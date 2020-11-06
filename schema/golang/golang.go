@@ -6,7 +6,6 @@ import (
 	"go/importer"
 	"go/parser"
 	"go/token"
-	"log"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -276,10 +275,7 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 									return nil, fmt.Errorf("unknown data type: %v", resultsNew)
 								}
 								// Make a Regex to say we only want letters and numbers
-								reg, err := regexp.Compile("[^a-zA-Z0-9]+")
-								if err != nil {
-									log.Fatal(err)
-								}
+								reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
 								responseArg := reg.ReplaceAllString(resultsNew, "")
 								responseArg = strings.ToLower(responseArg)
 								methodArgument := &schema.MethodArgument{
