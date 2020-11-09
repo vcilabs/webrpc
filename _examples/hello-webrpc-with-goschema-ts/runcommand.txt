@@ -1,0 +1,10 @@
+
+1) ./webrpc-gen -schema=testNew.go -target=go -pkg=main -server -out=./server/hello_api.gen.go
+
+2) ./webrpc-gen -schema=testNew.go -target=ts -client -out=./webapp/src/client.gen.ts
+
+3) Remove the unused imports from /server/hello_api.gen.go
+
+4) go run ./server
+
+5) cd webapp && npm start
