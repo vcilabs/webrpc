@@ -68,9 +68,9 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 		return "", err
 	}
 
-	if proto.SchemaType == "go" {
-		return string(genBuf.Bytes()), nil
-	}
+	// if proto.SchemaType == "go" {
+	// 	return string(genBuf.Bytes()), nil
+	// }
 
 	src, err := FormatSource(genBuf.Bytes())
 	if err != nil {

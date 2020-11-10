@@ -96,12 +96,21 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 	// This reads the imports from the go file and adds to Imports schema
 	additionalimports := pkg.Imports()
 	for _, additionalimport := range additionalimports {
+		additionalimportString := strings.TrimPrefix(additionalimport.String(), "package")
+		additionalimportString = strings.TrimSpace(additionalimportString)
+		splitAdditionalimportStrings := strings.Split(additionalimportString, " ")
+		importName := splitAdditionalimportStrings[0]
+		//Do not add context in import as it is already added
+		if strings.Contains(importName, "context") || strings.Contains(importName, "time") {
+			continue
+		}
 		regexForListOfImports := regexp.MustCompile(`\(.*?\)`)
-		listOfImports := regexForListOfImports.FindAllString(additionalimport.String(), -1)
-		listOfImports[0] = strings.Trim(listOfImports[0], "[(")
-		listOfImports[0] = strings.Trim(listOfImports[0], ")]")
+		listOfImportsPath := regexForListOfImports.FindAllString(splitAdditionalimportStrings[1], -1)
+		listOfImportsPath[0] = strings.Trim(listOfImportsPath[0], "[(")
+		listOfImportsPath[0] = strings.Trim(listOfImportsPath[0], ")]")
 		s.Imports = append(s.Imports, &schema.Import{
-			Path: listOfImports[0],
+			Name: importName,
+			Path: listOfImportsPath[0],
 		})
 	}
 	//goTypes holds the types information for a given go file
@@ -269,6 +278,7 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 									continue
 								}
 								resultsNew = strings.TrimSpace(resultsNew)
+								resultsNew = filepath.Base(resultsNew)
 								var varType schema.VarType
 								err := schema.ParseVarTypeExpr(s, resultsNew, &varType)
 								if err != nil {

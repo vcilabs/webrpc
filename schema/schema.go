@@ -27,6 +27,7 @@ type WebRPCSchema struct {
 }
 
 type Import struct {
+	Name    string   `json:"name"`
 	Path    string   `json:"path"`
 	Members []string `json:"members"`
 }

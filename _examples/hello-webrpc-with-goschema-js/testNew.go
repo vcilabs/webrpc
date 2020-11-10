@@ -1,4 +1,4 @@
-package main
+package hello
 
 import (
 	"context"
@@ -11,8 +11,8 @@ type Empty struct {
 }
 
 type User struct {
-	ID         uint64
-	username   string
+	ID        uint64
+	username  string
 	createdAt *time.Time
 }
 
