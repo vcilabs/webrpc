@@ -278,6 +278,11 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 									continue
 								}
 								resultsNew = strings.TrimSpace(resultsNew)
+								if strings.HasPrefix(resultsNew, "[]") && strings.Contains(resultsNew, "/") {
+									resultsNew = "[]*" + filepath.Base(resultsNew)
+								} else {
+									resultsNew = filepath.Base(resultsNew)
+								}
 								resultsNew = filepath.Base(resultsNew)
 								var varType schema.VarType
 								err := schema.ParseVarTypeExpr(s, resultsNew, &varType)
