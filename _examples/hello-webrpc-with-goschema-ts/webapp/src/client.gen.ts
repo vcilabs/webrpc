@@ -29,8 +29,8 @@ export interface Page {
 export interface User {
   id: number
   username: string
-  role: Kind
-  meta: {[key: string]: any}
+  role: *Kind
+  meta: {[key: string]: interface{}}
   internalID: number
 }
 
@@ -45,15 +45,15 @@ export interface FindUsersArgs {
 }
 
 export interface FindUsersReturn {
-  page: Page
-  user: Array<User>  
+  page: *Page
+  user: Array<*User>  
 }
 export interface GetUserArgs {
   userID: number
 }
 
 export interface GetUserReturn {
-  user: User  
+  user: *User  
 }
 export interface PingArgs {
 }
@@ -87,8 +87,8 @@ export class ExampleService implements ExampleService {
       createHTTPRequest(args, headers)).then((res) => {
       return buildResponse(res).then(_data => {
         return {
-          page: <Page>(_data.page), 
-          user: <Array<User>>(_data.user)
+          page: <*Page>(_data.page), 
+          user: <Array<*User>>(_data.user)
         }
       })
     })
@@ -100,7 +100,7 @@ export class ExampleService implements ExampleService {
       createHTTPRequest(args, headers)).then((res) => {
       return buildResponse(res).then(_data => {
         return {
-          user: <User>(_data.user)
+          user: <*User>(_data.user)
         }
       })
     })

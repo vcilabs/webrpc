@@ -1,4 +1,7 @@
-package typescript
+package contract
+
+//go:generate webrpc-gen -schema=contract.go -target=go -pkg=main -server -out=./server/hello_api.gen.go
+//go:generate webrpc-gen -schema=contract.go -target=ts -client -out=./webapp/src/client.gen.ts
 
 import (
 	"context"
