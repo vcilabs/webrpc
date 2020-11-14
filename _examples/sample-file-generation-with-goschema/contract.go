@@ -1,8 +1,13 @@
 package test
 
+//go:generate webrpc-gen -schema=contract.go -target=ts -client -server -out ./typescript.gen.ts
+//go:generate webrpc-gen -schema=contract.go -target=go -client -server -pkg=main -out ./golang.gen.go
+//go:generate webrpc-gen -schema=contract.go -target=js -client -server -extra=noexports -out ./javascript.gen.js
+
 import (
 	"context"
-	"regexp"	
+	"regexp"
+
 	"github.com/vcilabs/hubs/data/presenter"
 )
 
@@ -18,7 +23,7 @@ type Author struct {
 }
 
 type Book struct {
-	ID  BookID
+	ID      BookID
 	Name    string
 	Authors []Author
 }

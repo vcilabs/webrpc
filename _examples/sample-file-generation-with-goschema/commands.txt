@@ -1,5 +1,0 @@
-1) ./webrpc-gen -schema=testNew.go -target=ts -client -server -out ./typescript.gen.ts
-
-2) ./webrpc-gen -schema=testNew.go -target=go -client -server -pkg=main -out ./golang.gen.go
-
-3) ./webrpc-gen -schema=testNew.go -target=js -client -server -extra=noexports -out ./javascript.gen.js
