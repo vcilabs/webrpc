@@ -158,11 +158,11 @@ func (p *parser) parseType(name string, typ types.Type) (varType *schema.VarType
 	case *types.Struct:
 		return p.parseStruct(name, v)
 	case *types.Slice:
-		return p.parseSlice(v)
+		return p.parseSlice(name, v)
 	case *types.Interface:
 		return p.parseInterface(v)
 	case *types.Map:
-		return p.parseMap(v)
+		return p.parseMap(name, v)
 	case *types.Pointer:
 		// TODO: Consider adding schema.T_Pointer, or add metadata to Golang
 		// type to distinguish between "pointer to struct" vs. "plain struct".
@@ -194,6 +194,9 @@ func (p *parser) parseStruct(name string, structTyp *types.Struct) (*schema.VarT
 
 	for i := 0; i < structTyp.NumFields(); i++ {
 		field := structTyp.Field(i)
+		if !field.Exported() {
+			continue
+		}
 
 		varType, err := p.parseType(field.Name(), field.Type())
 		if err != nil {
@@ -222,8 +225,8 @@ func (p *parser) parseStruct(name string, structTyp *types.Struct) (*schema.VarT
 	return varType, nil
 }
 
-func (p *parser) parseSlice(sliceTyp *types.Slice) (*schema.VarType, error) {
-	elem, err := p.parseType("", sliceTyp.Elem())
+func (p *parser) parseSlice(name string, sliceTyp *types.Slice) (*schema.VarType, error) {
+	elem, err := p.parseType(name, sliceTyp.Elem())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse slice type")
 	}
@@ -248,13 +251,13 @@ func (p *parser) parseInterface(iface *types.Interface) (*schema.VarType, error)
 }
 
 // Parse argument of type interface. We only allow context.Context and error.
-func (p *parser) parseMap(m *types.Map) (*schema.VarType, error) {
-	key, err := p.parseType("", m.Key())
+func (p *parser) parseMap(name string, m *types.Map) (*schema.VarType, error) {
+	key, err := p.parseType(name, m.Key())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse map key type")
 	}
 
-	value, err := p.parseType("", m.Elem())
+	value, err := p.parseType(name, m.Elem())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse map value type")
 	}
