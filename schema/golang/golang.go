@@ -81,7 +81,7 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 	// The defaults work fine except for one setting:
 	// we must specify how to deal with imports.
 	//conf := types.Config{Importer: importer.For("source", nil)}
-	conf := types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
+	conf := types.Config{Importer: importer.ForCompiler(fset, "gc", nil)}
 
 	// Type-check the package containing only file f.
 	// Check returns a *types.Package.
