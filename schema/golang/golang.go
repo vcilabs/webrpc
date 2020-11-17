@@ -15,11 +15,13 @@ func NewParser(r *schema.Reader) *parser {
 		schema: &schema.WebRPCSchema{
 			SchemaType: "go",
 		},
+		parsedTypes: map[types.Type]*schema.VarType{},
 	}
 }
 
 type parser struct {
-	schema *schema.WebRPCSchema
+	schema      *schema.WebRPCSchema
+	parsedTypes map[types.Type]*schema.VarType
 }
 
 // Parse parses a Go source file and return WebRPC schema.
@@ -135,7 +137,19 @@ func (p *parser) parseInterfaces(scope *types.Scope) error {
 	return nil
 }
 
-func (p *parser) parseType(name string, typ types.Type) (*schema.VarType, error) {
+func (p *parser) parseType(name string, typ types.Type) (varType *schema.VarType, err error) {
+	if cached, ok := p.parsedTypes[typ]; ok {
+		return cached, nil
+	}
+
+	defer func() {
+		if err == nil {
+			// Cache the return value to avoid multiple runs for the same type.
+			// No need to lock the map, as we're parsing sequentially.
+			p.parsedTypes[typ] = varType
+		}
+	}()
+
 	switch v := typ.(type) {
 	case *types.Named:
 		return p.parseType(name, v.Underlying())
@@ -152,7 +166,7 @@ func (p *parser) parseType(name string, typ types.Type) (*schema.VarType, error)
 	case *types.Pointer:
 		// TODO: Consider adding schema.T_Pointer, or add metadata to Golang
 		// type to distinguish between "pointer to struct" vs. "plain struct".
-		varType, err := p.parseType(name, v.Elem())
+		varType, err = p.parseType(name, v.Elem())
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to dereference pointer")
 		}
