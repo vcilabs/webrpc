@@ -81,11 +81,11 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 	// The defaults work fine except for one setting:
 	// we must specify how to deal with imports.
 	//conf := types.Config{Importer: importer.For("source", nil)}
-	conf := types.Config{Importer: importer.ForCompiler(fset, "gc", nil)}
+	conf := types.Config{Importer: importer.ForCompiler(fset, "source", nil)}
 
 	// Type-check the package containing only file f.
 	// Check returns a *types.Package.
-	pkg, err := conf.Check("cmd/"+fileName, fset, []*ast.File{f}, nil)
+	pkg, err := conf.Check(fileName, fset, []*ast.File{f}, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "Invalid type in the file: "+fileName)
 	}
@@ -116,14 +116,14 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 	}
 	//goTypes holds the types information for a given go file
 	//It includes type interface, type struct
-	goTypes := strings.Split(pkg.Scope().String(), "type cmd/"+fileName+".")
+	goTypes := strings.Split(pkg.Scope().String(), "type "+fileName+".")
 	elementMap := make(map[string]string)
 	methods := []*schema.Method{}
 	//Sort the types in ascending order on basis of lenght of string
 	sort.Sort(ByLen(goTypes))
 	for _, goType := range goTypes {
 		//Replace the additional string with blank so as to get the valid desired content while parsing the types
-		goType = strings.ReplaceAll(goType, "cmd/"+fileName+".", "")
+		goType = strings.ReplaceAll(goType, fileName+".", "")
 		//Read the type Interface and update the name, inputs and outputs
 		if strings.Contains(goType, " interface") {
 			elementMap["interface"] = goType
@@ -186,7 +186,7 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 				}
 				structDef.Fields = append(structDef.Fields, field)
 			}
-		} else if (!strings.Contains(goType, " interface") || !strings.Contains(goType, "struct")) && !strings.Contains(goType, "cmd/"+fileName) {
+		} else if (!strings.Contains(goType, " interface") || !strings.Contains(goType, "struct")) && !strings.Contains(goType, fileName) {
 			// Handle advanced types
 			splitDataMap := strings.Split(goType, " ")
 			keyName := splitDataMap[0]
@@ -291,7 +291,6 @@ func buildArgumentsList(s *schema.WebRPCSchema, goType string, method string, ch
 								} else {
 									resultsNew = filepath.Base(resultsNew)
 								}
-								resultsNew = filepath.Base(resultsNew)
 								var varType schema.VarType
 								err := schema.ParseVarTypeExpr(s, resultsNew, &varType)
 								if err != nil {

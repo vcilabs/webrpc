@@ -76,6 +76,7 @@ func fieldType(in *schema.VarType) (string, error) {
 		if err != nil {
 			return "", err
 		}
+		z = strings.ReplaceAll(z, "*", "")
 		return "Array<" + z + ">", nil
 
 	case schema.T_Struct:
@@ -227,6 +228,7 @@ func serviceInterfaceName(in schema.VarName) (string, error) {
 
 func newOutputArgResponse(in *schema.MethodArgument) (string, error) {
 	z, err := fieldType(in.Type)
+	z = strings.ReplaceAll(z, "*", "")
 	if err != nil {
 		return "", err
 	}
