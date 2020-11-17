@@ -162,11 +162,18 @@ func (p *Parser) goparse(path string) (*schema.WebRPCSchema, error) {
 			}
 			//Read the struct fields and update the MessageFields
 			for _, def := range fieldsOfStruct(goType) {
+				var fieldName, fieldType string
 				if len(def) < 1 {
 					continue
+				} else if len(strings.Fields(def)) == 1 {
+					fieldType = def
+					reg, _ := regexp.Compile("[^a-zA-Z0-9]+")
+					fieldName = reg.ReplaceAllString(def, "")
+					fieldName = strings.Title(strings.ToLower(fieldName))
+				} else {
+					splitField := strings.Split(def, " ")
+					fieldName, fieldType = splitField[0], splitField[1]
 				}
-				splitField := strings.Split(def, " ")
-				fieldName, fieldType := splitField[0], splitField[1]
 				var varType schema.VarType
 				err := schema.ParseVarTypeExpr(s, fieldType, &varType)
 				if err != nil {
