@@ -47,7 +47,7 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
           Ret{{$i}} {{$output | methodArgType}} `json:"{{$output.Name | downcaseName}}"`
         {{- end}}          
       }{}
-    {{- end}}
+      {{- end}}
 
       err := doJSONRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
       return {{argsList .Outputs "out.Ret"}}{{commaIfLen .Outputs}} err

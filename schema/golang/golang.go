@@ -12,9 +12,7 @@ import (
 
 func NewParser(r *schema.Reader) *parser {
 	return &parser{
-		schema: &schema.WebRPCSchema{
-			SchemaType: "go",
-		},
+		schema:      &schema.WebRPCSchema{},
 		parsedTypes: map[types.Type]*schema.VarType{},
 	}
 }
@@ -187,6 +185,7 @@ func (p *parser) parseBasic(typ *types.Basic) (*schema.VarType, error) {
 }
 
 func (p *parser) parseStruct(name string, structTyp *types.Struct) (*schema.VarType, error) {
+
 	msg := &schema.Message{
 		Name: schema.VarName(name),
 		Type: schema.MessageType("struct"),

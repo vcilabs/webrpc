@@ -15,8 +15,6 @@ type VarType struct {
 	List   *VarListType
 	Map    *VarMapType
 	Struct *VarStructType
-
-	UserDefined *VarUserDefinedType
 }
 
 func (t *VarType) String() string {
@@ -80,10 +78,6 @@ type VarStructType struct {
 	Message *Message
 }
 
-type VarUserDefinedType struct {
-	Name string
-}
-
 func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 	if expr == "" {
 		return nil
@@ -97,14 +91,14 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		// test for complex datatype
 		if isListExpr(expr) {
 			dataType = T_List
-		} else if isMapExpr(expr) || isGoSchemaMapExpr(expr) {
+		} else if isMapExpr(expr) {
 			dataType = T_Map
-		} else {
-			dataType = T_UserDefined
 		}
 	}
+
 	// Set core data type
 	vt.Type = dataType
+
 	// For complex types, keep parsing
 	switch vt.Type {
 	case T_List:
@@ -119,20 +113,10 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		}
 
 	case T_Map:
-		var key string
-		var value string
-		var err error
 		// parse map expr
-		if schema.SchemaType == "go" {
-			key, value, err = parseGoSchemaMapExpr(expr)
-			if err != nil {
-				return err
-			}
-		} else {
-			key, value, err = parseMapExpr(expr)
-			if err != nil {
-				return err
-			}
+		key, value, err := parseMapExpr(expr)
+		if err != nil {
+			return err
 		}
 
 		keyDataType, ok := DataTypeFromString[key]
@@ -143,22 +127,12 @@ func ParseVarTypeExpr(schema *WebRPCSchema, expr string, vt *VarType) error {
 		// create sub-type object for map
 		vt.Map = &VarMapType{Key: keyDataType, Value: &VarType{}}
 
-		if schema.SchemaType == "go" && value == "interface{" {
-			// shift expr and keep parsing
-			expr = value + "}"
-		} else {
-			// shift expr and keep parsing
-			expr = value
-		}
+		// shift expr and keep parsing
+		expr = value
 		err = ParseVarTypeExpr(schema, expr, vt.Map.Value)
 		if err != nil {
 			return err
 		}
-
-	case T_UserDefined:
-		userDefinedExpr := expr
-		vt.Type = T_UserDefined
-		vt.UserDefined = &VarUserDefinedType{Name: userDefinedExpr}
 
 	case T_Unknown:
 
@@ -209,22 +183,6 @@ func parseMapExpr(expr string) (string, string, error) {
 	return key, value, nil
 }
 
-func parseGoSchemaMapExpr(expr string) (string, string, error) {
-	if !isGoSchemaMapExpr(expr) {
-		return "", "", errors.Errorf("schema error: invalid map expr for '%s'", expr)
-	}
-
-	mapKeyword := DataTypeToString[T_Map]
-	expr = expr[len(mapKeyword):]
-	key := getMapKey(expr)
-	value := strings.TrimPrefix(expr, "["+key+"]")
-	if !isValidVarKeyType(key) {
-		return "", "", errors.Errorf("schema error: invalid map key '%s' for '%s'", key, expr)
-	}
-
-	return key, value, nil
-}
-
 func buildVarTypeExpr(vt *VarType, expr string) string {
 	switch vt.Type {
 	case T_Unknown:
@@ -242,9 +200,6 @@ func buildVarTypeExpr(vt *VarType, expr string) string {
 		expr += vt.Struct.Name
 		return expr
 
-	case T_UserDefined:
-		expr += vt.UserDefined.Name
-		return expr
 	default:
 		// basic type
 		expr += vt.Type.String()
@@ -259,11 +214,6 @@ func isListExpr(expr string) bool {
 
 func isMapExpr(expr string) bool {
 	mapTest := DataTypeToString[T_Map] + "<"
-	return strings.HasPrefix(expr, mapTest)
-}
-
-func isGoSchemaMapExpr(expr string) bool {
-	mapTest := DataTypeToString[T_Map] + "["
 	return strings.HasPrefix(expr, mapTest)
 }
 
@@ -299,15 +249,4 @@ func isValidVarType(s string, allowedList []DataType) bool {
 		}
 	}
 	return false
-}
-
-func getMapKey(expr string) string {
-	i := strings.Index(expr, "[")
-	if i >= 0 {
-		j := strings.Index(expr, "]")
-		if j >= 0 {
-			return expr[i+1 : j]
-		}
-	}
-	return ""
 }

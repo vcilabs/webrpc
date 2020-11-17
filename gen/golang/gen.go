@@ -21,8 +21,6 @@ func init() {
 type generator struct{}
 
 func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (string, error) {
-	var schemaHash = ""
-	var err error
 	// Get templates from `embed` asset package
 	// NOTE: make sure to `go generate` whenever you change the files in `templates/` folder
 	templates, err := getTemplates()
@@ -46,11 +44,9 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	}
 
 	// generate deterministic schema hash of the proto file
-	if proto.SchemaType != "go" {
-		schemaHash, err = proto.SchemaHash()
-		if err != nil {
-			return "", err
-		}
+	schemaHash, err := proto.SchemaHash()
+	if err != nil {
+		return "", err
 	}
 
 	// template vars
@@ -61,6 +57,7 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	}{
 		proto, schemaHash, opts,
 	}
+
 	// generate the template
 	genBuf := bytes.NewBuffer(nil)
 	err = tmpl.ExecuteTemplate(genBuf, "proto", vars)
@@ -68,11 +65,7 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 		return "", err
 	}
 
-	// if proto.SchemaType == "go" {
-	// 	return string(genBuf.Bytes()), nil
-	// }
-
-	return genBuf.String(), nil
+	// return string(genBuf.Bytes()), nil
 
 	src, err := FormatSource(genBuf.Bytes())
 	if err != nil {
@@ -105,5 +98,6 @@ func getTemplates() (map[string]string, error) {
 		data[path] = string(buf)
 		return nil
 	})
+
 	return data, nil
 }
