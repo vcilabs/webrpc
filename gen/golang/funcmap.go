@@ -72,6 +72,9 @@ func fieldType(in *schema.VarType) (string, error) {
 	case schema.T_Struct:
 		return "*" + in.Struct.Name, nil
 
+	case schema.T_UserDefined:
+		return in.UserDefined.Name, nil
+
 	default:
 		if fieldTypeMap[in.Type] != "" {
 			return fieldTypeMap[in.Type], nil
@@ -268,6 +271,10 @@ func isStruct(t schema.MessageType) bool {
 	return t == "struct"
 }
 
+func isAdvancedType(t schema.MessageType) bool {
+	return t == "advance"
+}
+
 func exportedField(in *schema.MessageField) (string, error) {
 	s := string(in.Name)
 	s = strings.ToUpper(s[0:1]) + s[1:]
@@ -334,6 +341,7 @@ func templateFuncMap(proto *schema.WebRPCSchema) map[string]interface{} {
 		"argsList":              argsList,
 		"commaIfLen":            commaIfLen,
 		"isStruct":              isStruct,
+		"isAdvancedType":        isAdvancedType,
 		"isEnum":                isEnum,
 		"exportedField":         exportedField,
 		"downcaseName":          downcaseName,

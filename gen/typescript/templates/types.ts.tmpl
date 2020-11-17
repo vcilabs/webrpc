@@ -6,6 +6,10 @@
 {{- if .Messages -}}
 {{range .Messages -}}
 
+{{if .Type | isAdvancedType}}
+type {{.Name}} = {{.EnumType}};
+{{- end}}
+
 {{if .Type | isEnum -}}
 {{$enumName := .Name}}
 export enum {{$enumName}} {

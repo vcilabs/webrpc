@@ -1,0 +1,9 @@
+1) ./webrpc-gen -schema=testNew.go -target=go -pkg=main -server -out=./server/hello-api.gen.go
+
+2) ./webrpc-gen -schema=testNew.go -target=js -extra=noexports -client -out=./webapp/client.gen.js
+
+3) Remove the unwanted imports from server hello-api.gen.go file
+
+4) go run ./server
+
+5) webify -port=4444 -dir=./webapp
