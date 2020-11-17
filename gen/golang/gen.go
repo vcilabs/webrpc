@@ -72,6 +72,8 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	// 	return string(genBuf.Bytes()), nil
 	// }
 
+	return genBuf.String(), nil
+
 	src, err := FormatSource(genBuf.Bytes())
 	if err != nil {
 		return "", errors.Errorf("gofmt is failing to format the Go code because: %v", err)
