@@ -8,7 +8,6 @@ import (
 	"text/template"
 
 	"github.com/goware/statik/fs"
-	"github.com/pkg/errors"
 	"github.com/webrpc/webrpc/gen"
 	"github.com/webrpc/webrpc/gen/golang/embed"
 	"github.com/webrpc/webrpc/schema"
@@ -65,11 +64,14 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 		return "", err
 	}
 
-	// return string(genBuf.Bytes()), nil
-
 	src, err := FormatSource(genBuf.Bytes())
 	if err != nil {
-		return "", errors.Errorf("gofmt is failing to format the Go code because: %v", err)
+
+		// DEBUGGING
+		return string(genBuf.Bytes()), nil
+		// DEBUGGING
+
+		//return "", errors.Errorf("gofmt is failing to format the Go code because: %v", err)
 	}
 
 	return string(src), nil

@@ -111,28 +111,29 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 				return errors.Errorf("interface %v method %v(): first method argument must be context.Context: no arguments defined", name, methodName)
 			}
 
-			// First method parameter must be of type context.Context.
-			if err := ensureContextType(methodParams.At(0).Type()); err != nil {
-				return errors.Wrapf(err, "interface %v method %v(): first method argument must be context.Context", name, methodName)
-			}
-
-			results := methodSignature.Results()
-
-			// TODO: Ensure the last result item is of type error.
-
 			inputs, err := p.getMethodArguments(methodParams)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get inputs (method arguments) of %v interface's method %v()", name, methodName)
 			}
-			outputs, err := p.getMethodArguments(results)
+
+			// First method argument must be of type context.Context.
+			if err := ensureContextType(methodParams.At(0).Type()); err != nil {
+				return errors.Wrapf(err, "interface %v method %v(): first method argument must be context.Context", name, methodName)
+			}
+			// Cut it off. The gen/golang adds context.Context automatically to each method.
+			inputs = inputs[1:]
+
+			methodResults := methodSignature.Results()
+
+			outputs, err := p.getMethodArguments(methodResults)
 			if err != nil {
 				return errors.Wrapf(err, "failed to get outputs (method results) of %v interface's method %v()", name, methodName)
 			}
 
 			service.Methods = append(service.Methods, &schema.Method{
 				Name:    schema.VarName(methodName),
-				Inputs:  inputs,
-				Outputs: outputs,
+				Inputs:  inputs[1:],
+				Outputs: outputs[:len(outputs)-1],
 			})
 		}
 
