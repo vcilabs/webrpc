@@ -150,7 +150,7 @@ func (p *parser) parseType(name string, typ types.Type) (varType *schema.VarType
 
 	switch v := typ.(type) {
 	case *types.Named:
-		return p.parseType(name, v.Underlying())
+		return p.parseType(v.Obj().Name(), v.Underlying())
 	case *types.Basic:
 		return p.parseBasic(v)
 	case *types.Struct:
@@ -206,12 +206,9 @@ func (p *parser) parseStruct(name string, structTyp *types.Struct) (*schema.VarT
 			Name: schema.VarName(field.Name()),
 			Type: varType,
 		})
-		fmt.Printf("struct field: %+v", field)
 	}
 
 	p.schema.Messages = append(p.schema.Messages, msg)
-
-	fmt.Printf("struct: %+v", structTyp)
 
 	varType := &schema.VarType{
 		Type: schema.T_Struct,
@@ -284,7 +281,7 @@ func (p *parser) getMethodArguments(params *types.Tuple) ([]*schema.MethodArgume
 			name = fmt.Sprintf("ret%v", i)
 		}
 
-		varType, err := p.parseType(name, typ)
+		varType, err := p.parseType("", typ) // Type name will be resolved deeper down the stack.
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse argument %v", name)
 		}
