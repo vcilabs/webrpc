@@ -103,37 +103,43 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 
 			methodSignature, ok := method.Type().(*types.Signature)
 			if !ok {
-				return errors.Errorf("failed to get signature of %v interface's method %v()", name, methodName)
+				return errors.Errorf("interface %v method %v(): failed to get method signature", name, methodName)
 			}
 
 			methodParams := methodSignature.Params()
-			if methodParams.Len() == 0 {
-				return errors.Errorf("interface %v method %v(): first method argument must be context.Context: no arguments defined", name, methodName)
-			}
-
 			inputs, err := p.getMethodArguments(methodParams)
 			if err != nil {
-				return errors.Wrapf(err, "failed to get inputs (method arguments) of %v interface's method %v()", name, methodName)
+				return errors.Wrapf(err, "interface %v method %v(): failed to get inputs (method arguments)", name, methodName)
 			}
 
 			// First method argument must be of type context.Context.
+			if methodParams.Len() == 0 {
+				return errors.Errorf("interface %v method %v(): first method argument must be context.Context: no arguments defined", name, methodName)
+			}
 			if err := ensureContextType(methodParams.At(0).Type()); err != nil {
 				return errors.Wrapf(err, "interface %v method %v(): first method argument must be context.Context", name, methodName)
 			}
-			// Cut it off. The gen/golang adds context.Context automatically to each method.
-			inputs = inputs[1:]
+			inputs = inputs[1:] // Cut it off. The gen/golang adds context.Context as first method argument automatically.
 
 			methodResults := methodSignature.Results()
-
 			outputs, err := p.getMethodArguments(methodResults)
 			if err != nil {
-				return errors.Wrapf(err, "failed to get outputs (method results) of %v interface's method %v()", name, methodName)
+				return errors.Wrapf(err, "interface %v method %v(): failed to get outputs (method results)", name, methodName)
 			}
+
+			// Last method return value must be of type error.
+			if methodResults.Len() == 0 {
+				return errors.Errorf("interface %v method %v(): last return value must be context.Context: no return values defined", name, methodName)
+			}
+			if err := ensureErrorType(methodResults.At(methodResults.Len() - 1).Type()); err != nil {
+				return errors.Wrapf(err, "interface %v method %v(): first method argument must be context.Context", name, methodName)
+			}
+			outputs = outputs[:len(outputs)-1] // Cut it off. The gen/golang adds error as a last return value automatically.
 
 			service.Methods = append(service.Methods, &schema.Method{
 				Name:    schema.VarName(methodName),
-				Inputs:  inputs[1:],
-				Outputs: outputs[:len(outputs)-1],
+				Inputs:  inputs,
+				Outputs: outputs,
 			})
 		}
 

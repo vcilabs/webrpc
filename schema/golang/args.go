@@ -55,3 +55,23 @@ func ensureContextType(typ types.Type) (err error) {
 
 	return nil
 }
+
+func ensureErrorType(typ types.Type) (err error) {
+	namedType, ok := typ.(*types.Named)
+	if !ok {
+		return errors.Errorf("expected named type: found type %T (%+v)", typ, typ)
+	}
+
+	if _, ok := namedType.Underlying().(*types.Interface); !ok {
+		return errors.Errorf("expected underlying interface: found type %T (%+v)", typ, typ)
+	}
+
+	pkgName := namedType.Obj().Pkg()
+	typeName := namedType.Obj().Name()
+
+	if pkgName != nil && typeName != "error" {
+		return errors.Errorf("expected error: found %v.%v", pkgName, typeName)
+	}
+
+	return nil
+}
