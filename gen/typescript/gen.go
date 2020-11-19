@@ -7,7 +7,6 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/goware/statik/fs"
 	"github.com/pkg/errors"
 	"github.com/webrpc/webrpc/gen"
@@ -55,8 +54,6 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	}{
 		proto, schemaHash, opts,
 	}
-
-	spew.Dump(vars)
 
 	// Generate the template
 	genBuf := bytes.NewBuffer(nil)
