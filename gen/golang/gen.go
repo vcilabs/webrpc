@@ -33,7 +33,7 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	// Load templates
 	tmpl := template.
 		New("webrpc-gen-go").
-		Funcs(templateFuncMap(proto))
+		Funcs(templateFuncMap(proto, opts))
 
 	for _, tmplData := range templates {
 		_, err = tmpl.Parse(tmplData)
@@ -63,6 +63,8 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	if err != nil {
 		return "", err
 	}
+
+	return string(genBuf.Bytes()), nil
 
 	src, err := FormatSource(genBuf.Bytes())
 	if err != nil {

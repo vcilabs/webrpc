@@ -23,6 +23,17 @@ func (p *parser) parseType(name string, typ types.Type) (varType *schema.VarType
 
 	switch v := typ.(type) {
 	case *types.Named:
+		pkg := v.Obj().Pkg()
+		if pkg != nil {
+			// If the type belongs to a package, let's save the pkg to schema.Imports once.
+			pkgPath := pkg.Path()
+			if _, ok := p.resolvedImports[pkgPath]; !ok {
+				p.resolvedImports[pkgPath] = struct{}{}
+				p.schema.Imports = append(p.schema.Imports, &schema.Import{
+					Path: pkgPath,
+				})
+			}
+		}
 		return p.parseType(v.Obj().Name(), v.Underlying())
 	case *types.Basic:
 		return p.parseBasic(v)

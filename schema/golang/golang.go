@@ -14,12 +14,30 @@ func NewParser(r *schema.Reader) *parser {
 	return &parser{
 		schema:      &schema.WebRPCSchema{},
 		parsedTypes: map[types.Type]*schema.VarType{},
+		resolvedImports: map[string]struct{}{
+			// Initial schema file's package name as artificially set by golang.org/x/tools/go/packages.
+			"command-line-arguments": struct{}{},
+
+			// These imports are already defined in the Go template.
+			"context":       struct{}{},
+			"encoding/json": struct{}{},
+			"fmt":           struct{}{},
+			"io/ioutil":     struct{}{},
+			"net/http":      struct{}{},
+			"time":          struct{}{},
+			"strings":       struct{}{},
+			"bytes":         struct{}{},
+			"errors":        struct{}{},
+			"io":            struct{}{},
+			"net/url":       struct{}{},
+		},
 	}
 }
 
 type parser struct {
-	schema      *schema.WebRPCSchema
-	parsedTypes map[types.Type]*schema.VarType
+	schema          *schema.WebRPCSchema
+	parsedTypes     map[types.Type]*schema.VarType
+	resolvedImports map[string]struct{}
 }
 
 // Parse parses a Go source file and return WebRPC schema.
@@ -40,7 +58,6 @@ func (p *parser) Parse(path string) (*schema.WebRPCSchema, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load packages")
 	}
-
 	if len(initialPkg) != 1 {
 		return nil, errors.Errorf("failed to load initial package (len=%v)", len(initialPkg))
 	}
@@ -49,27 +66,6 @@ func (p *parser) Parse(path string) (*schema.WebRPCSchema, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse Go interfaces")
 	}
-
-	// TODO: Golang "import mode", where we don't generate messages for all imported structs,
-	//       but instead we use imports statements from the original package.
-	//
-	// // Append imported packages.
-	// allPkgs := initialPkg
-	// for _, pkg := range initialPkg {
-	// 	for _, err := range pkg.Errors {
-	// 		// TODO: Is this a syntax error? Should we return?
-	// 		fmt.Printf("error: %v\n", err)
-	// 	}
-
-	// 	for _, importedPkg := range pkg.Imports {
-	// 		// NOTE: These package might have additional imports. ie. importedPkg.Imports.
-	// 		s.Imports = append(s.Imports, &schema.Import{
-	// 			Name: importedPkg.ID,
-	// 			Path: importedPkg.ID,
-	// 		})
-	// 		allPkgs = append(allPkgs, importedPkg)
-	// 	}
-	// }
 
 	return p.schema, nil
 }
