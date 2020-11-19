@@ -14,11 +14,13 @@ func NewParser(r *schema.Reader) *parser {
 	return &parser{
 		schema:      &schema.WebRPCSchema{},
 		parsedTypes: map[types.Type]*schema.VarType{},
+
+		// TODO: Change this to map[*types.Package]string so we can rename duplicated pkgs?
 		resolvedImports: map[string]struct{}{
-			// Initial schema file's package name as artificially set by golang.org/x/tools/go/packages.
+			// Initial schema file's package name artificially set by golang.org/x/tools/go/packages.
 			"command-line-arguments": struct{}{},
 
-			// These imports are already defined in the Go template.
+			// The following imports are already defined in the Go template.
 			"context":       struct{}{},
 			"encoding/json": struct{}{},
 			"fmt":           struct{}{},
@@ -49,20 +51,20 @@ func (p *parser) Parse(path string) (*schema.WebRPCSchema, error) {
 	}()
 
 	cfg := &packages.Config{
-		// TODO: Make the Dir dynamic, parse it from the CWD + path.
+		// TODO: Make the Dir dynamic, parse it from the schema file's path (+current working directory if not absolute).
 		Dir:  "/Users/vojtechvitek/go/src/github.com/vcilabs/hubs/contract",
 		Mode: packages.NeedName | packages.NeedImports | packages.NeedTypes | packages.NeedFiles | packages.NeedDeps | packages.NeedSyntax,
 	}
 
-	initialPkg, err := packages.Load(cfg, path)
+	schemaPkg, err := packages.Load(cfg, path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load packages")
 	}
-	if len(initialPkg) != 1 {
-		return nil, errors.Errorf("failed to load initial package (len=%v)", len(initialPkg))
+	if len(schemaPkg) != 1 {
+		return nil, errors.Errorf("failed to load initial package (len=%v)", len(schemaPkg))
 	}
 
-	err = p.parsePkgInterfaces(initialPkg[0].Types.Scope())
+	err = p.parsePkgInterfaces(schemaPkg[0].Types.Scope())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse Go interfaces")
 	}
@@ -78,12 +80,13 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 		}
 
 		service := &schema.Service{
-			Name: schema.VarName(name),
+			Name:   schema.VarName(name),
+			Schema: p.schema, // denormalize/back-reference
 		}
 
 		fmt.Printf("interface %v\n", name)
 
-		// TODO: Loop over embedded interfaces first?
+		// TODO: Do we need to loop over embedded interfaces first? Try defining embeeded interface.
 		// for i := 0; i < iface.NumEmbeddeds(); i++ {
 		// }
 
@@ -103,7 +106,7 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 			}
 
 			methodParams := methodSignature.Params()
-			inputs, err := p.getMethodArguments(methodParams)
+			inputs, err := p.getMethodArguments(methodParams, true)
 			if err != nil {
 				return errors.Wrapf(err, "interface %v method %v(): failed to get inputs (method arguments)", name, methodName)
 			}
@@ -118,7 +121,7 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 			inputs = inputs[1:] // Cut it off. The gen/golang adds context.Context as first method argument automatically.
 
 			methodResults := methodSignature.Results()
-			outputs, err := p.getMethodArguments(methodResults)
+			outputs, err := p.getMethodArguments(methodResults, false)
 			if err != nil {
 				return errors.Wrapf(err, "interface %v method %v(): failed to get outputs (method results)", name, methodName)
 			}
@@ -136,6 +139,7 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 				Name:    schema.VarName(methodName),
 				Inputs:  inputs,
 				Outputs: outputs,
+				Service: service, // denormalize/back-reference
 			})
 		}
 

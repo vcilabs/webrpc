@@ -306,9 +306,9 @@ func isEnum(t schema.MessageType) bool {
 	return t == "enum"
 }
 
-func printExtraImports(proto *schema.WebRPCSchema, opts gen.TargetOptions) func() string {
+func printGoImports(proto *schema.WebRPCSchema, opts gen.TargetOptions) func() string {
 	return func() string {
-		if opts.Extra != "import-types" {
+		if opts.Extra != "goimports" {
 			return ""
 		}
 		var b strings.Builder
@@ -321,7 +321,7 @@ func printExtraImports(proto *schema.WebRPCSchema, opts gen.TargetOptions) func(
 
 func importTypes(opts gen.TargetOptions) func() bool {
 	return func() bool {
-		return opts.Extra == "import-types"
+		return opts.Extra == "goimports"
 	}
 }
 
@@ -357,7 +357,7 @@ func templateFuncMap(proto *schema.WebRPCSchema, opts gen.TargetOptions) map[str
 		"isEnum":                isEnum,
 		"exportedField":         exportedField,
 		"downcaseName":          downcaseName,
-		"printExtraImports":     printExtraImports(proto, opts),
+		"printGoImports":        printGoImports(proto, opts),
 		"importTypes":           importTypes(opts),
 	}
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/webrpc/webrpc/schema"
 )
 
-func (p *parser) getMethodArguments(params *types.Tuple) ([]*schema.MethodArgument, error) {
+func (p *parser) getMethodArguments(params *types.Tuple, isInput bool) ([]*schema.MethodArgument, error) {
 	var args []*schema.MethodArgument
 
 	for i := 0; i < params.Len(); i++ {
@@ -26,8 +26,10 @@ func (p *parser) getMethodArguments(params *types.Tuple) ([]*schema.MethodArgume
 		}
 
 		arg := &schema.MethodArgument{
-			Name: schema.VarName(name),
-			Type: varType,
+			Name:      schema.VarName(name),
+			Type:      varType,
+			InputArg:  isInput,  // denormalize/back-reference
+			OutputArg: !isInput, // denormalize/back-reference
 		}
 
 		args = append(args, arg)
