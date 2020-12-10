@@ -17,7 +17,11 @@ func (p *parser) getMethodArguments(params *types.Tuple, isInput bool) ([]*schem
 
 		name := param.Name()
 		if name == "" {
-			name = fmt.Sprintf("ret%v", i)
+			if isInput {
+				name = fmt.Sprintf("arg%v", i) // 0 is `ctx context.Context`
+			} else {
+				name = fmt.Sprintf("ret%v", i+1)
+			}
 		}
 
 		varType, err := p.parseType("", typ) // Type name will be resolved deeper down the stack.
