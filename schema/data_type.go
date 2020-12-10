@@ -39,8 +39,6 @@ const (
 
 	T_Primitive
 	T_Struct // aka, a reference to our own webrpc proto struct/message
-
-	T_UserDefined //This defines the user created return type depending upon imports
 )
 
 var DataTypeToString = map[DataType]string{
