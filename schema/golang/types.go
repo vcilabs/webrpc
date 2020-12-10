@@ -12,12 +12,18 @@ func (p *parser) parseType(typeName string, typ types.Type) (varType *schema.Var
 	if cached, ok := p.parsedTypes[typ]; ok {
 		return cached, nil
 	}
+	// We want to parse each type just once. So we store the result in cache. But also, we need
+	// to lock the cache for recursive types to prevent endless recursion for linked lists etc.
+	// Note: We're parsing sequentially, no need for sync.Map.
+	lockRecursiveTypes := &schema.VarType{}
+	p.parsedTypes[typ] = lockRecursiveTypes
 	defer func() {
-		if err == nil {
-			// Cache the return value to avoid parsing the same type multiple times.
-			// No need to lock the map, as we're parsing sequentially.
-			p.parsedTypes[typ] = varType
+		if err != nil {
+			delete(p.parsedTypes, typ)
 		}
+
+		// Update the value in cache for any following calls once we're done.
+		*lockRecursiveTypes = *varType
 	}()
 
 	switch v := typ.(type) {
