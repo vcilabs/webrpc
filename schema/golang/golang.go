@@ -12,8 +12,9 @@ import (
 
 func NewParser(r *schema.Reader) *parser {
 	return &parser{
-		schema:      &schema.WebRPCSchema{},
-		parsedTypes: map[types.Type]*schema.VarType{},
+		schema:          &schema.WebRPCSchema{},
+		parsedTypes:     map[types.Type]*schema.VarType{},
+		parsedTypeNames: map[string]struct{}{},
 
 		// TODO: Change this to map[*types.Package]string so we can rename duplicated pkgs?
 		resolvedImports: map[string]struct{}{
@@ -39,7 +40,9 @@ func NewParser(r *schema.Reader) *parser {
 type parser struct {
 	schema          *schema.WebRPCSchema
 	parsedTypes     map[types.Type]*schema.VarType
+	parsedTypeNames map[string]struct{}
 	resolvedImports map[string]struct{}
+	schemaPkgName   string
 }
 
 // Parse parses a Go source file and return WebRPC schema.
@@ -63,6 +66,8 @@ func (p *parser) Parse(path string) (*schema.WebRPCSchema, error) {
 	if len(schemaPkg) != 1 {
 		return nil, errors.Errorf("failed to load initial package (len=%v)", len(schemaPkg))
 	}
+
+	p.schemaPkgName = schemaPkg[0].Name
 
 	err = p.parsePkgInterfaces(schemaPkg[0].Types.Scope())
 	if err != nil {

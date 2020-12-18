@@ -1,8 +1,8 @@
 package golang
 
 import (
-	"fmt"
 	"go/types"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/webrpc/webrpc/schema"
@@ -28,10 +28,25 @@ func (p *parser) parseType(typeName string, typ types.Type) (varType *schema.Var
 
 	switch v := typ.(type) {
 	case *types.Named:
+		typeName := v.Obj().Name()
 		pkg := v.Obj().Pkg()
 		if pkg != nil {
 			// If the type belongs to a specific package, save the pkg reference to schema.Imports.
 			pkgPath := pkg.Path()
+
+			switch pkgPath + "." + typeName {
+			case "time.Time":
+				var varType schema.VarType
+				if err := schema.ParseVarTypeExpr(p.schema, "timestamp", &varType); err != nil {
+					return nil, errors.Wrap(err, "failed to parse timestamp")
+				}
+				return &varType, nil
+
+				//case "postgresql.JSONBConverter":
+			}
+
+			typeName = pkgPath + strings.ToUpper(typeName[0:1]) + typeName[1:]
+
 			if _, ok := p.resolvedImports[pkgPath]; !ok {
 				p.resolvedImports[pkgPath] = struct{}{}
 				p.schema.Imports = append(p.schema.Imports, &schema.Import{
@@ -39,7 +54,7 @@ func (p *parser) parseType(typeName string, typ types.Type) (varType *schema.Var
 				})
 			}
 		}
-		return p.parseType(v.Obj().Name(), v.Underlying())
+		return p.parseType(typeName, v.Underlying())
 
 	case *types.Basic:
 		return p.parseBasic(v)
@@ -72,16 +87,30 @@ func (p *parser) parseType(typeName string, typ types.Type) (varType *schema.Var
 
 func (p *parser) parseBasic(typ *types.Basic) (*schema.VarType, error) {
 	var varType schema.VarType
-	err := schema.ParseVarTypeExpr(p.schema, typ.Name(), &varType)
-	if err != nil {
-		return nil, fmt.Errorf("unknown data type: %v", typ.Name())
+	if err := schema.ParseVarTypeExpr(p.schema, typ.Name(), &varType); err != nil {
+		return nil, errors.Wrapf(err, "failed to parse basic type: %v", typ.Name())
 	}
 
 	return &varType, nil
 }
 
 func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.VarType, error) {
-	// TODO: Handle a special case for time.Time => schema.T_Timestamp.
+	parts := strings.FieldsFunc(typeName, func(r rune) bool {
+		return r == '.' || r == '/' || r == '-' || r == '_'
+	})
+
+	if typeName != p.schemaPkgName {
+		typeName = ""
+		for i := len(parts) - 1; i >= 0; i-- {
+			typeName = parts[i] + typeName
+			if _, ok := p.parsedTypeNames[typeName]; !ok {
+				p.parsedTypeNames[typeName] = struct{}{}
+				break
+			}
+		}
+	} else {
+		typeName = parts[len(parts)-1]
+	}
 
 	msg := &schema.Message{
 		Name: schema.VarName(typeName),
