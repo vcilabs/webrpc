@@ -38,11 +38,16 @@ func NewParser(r *schema.Reader) *parser {
 }
 
 type parser struct {
-	schema          *schema.WebRPCSchema
+	schema *schema.WebRPCSchema
+
+	// Cache for already parsed types, to improve performance & so we can traverse circular dependencies.
 	parsedTypes     map[types.Type]*schema.VarType
 	parsedTypeNames map[string]struct{}
+
+	inlineMode      bool // When traversing `json:",inline"`, we don't want to store the struct type as WebRPC message.
 	resolvedImports map[string]struct{}
-	schemaPkgName   string
+
+	schemaPkgName string // Shema file's package name.
 }
 
 // Parse parses a Go source file and return WebRPC schema.

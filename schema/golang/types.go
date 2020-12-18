@@ -1,6 +1,7 @@
 package golang
 
 import (
+	"fmt"
 	"go/types"
 	"strings"
 
@@ -47,8 +48,6 @@ func (p *parser) parseType(typeName string, typ types.Type) (varType *schema.Var
 					return nil, errors.Wrap(err, "failed to parse timestamp")
 				}
 				return &varType, nil
-
-				//case "postgresql.JSONBConverter":
 			}
 
 			typeName = pkgPath + strings.ToUpper(typeName[0:1]) + typeName[1:]
@@ -123,11 +122,34 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 		Type: schema.MessageType("struct"),
 	}
 
+	fmt.Printf("  - type %v\n", typeName)
+
 	for i := 0; i < structTyp.NumFields(); i++ {
 		field := structTyp.Field(i)
 		if !field.Exported() {
 			continue
 		}
+
+		tag := structTyp.Tag(i)
+		if strings.Contains(tag, `json:",inline"`) {
+			// Turn on "inline mode", so we don't store the type as individual WebRPC message.
+			// But what if there is an actual legit type deep down under this `json:",inline"` tag?
+			// TODO: Make this smarter.
+			p.inlineMode = true
+			varType, err := p.parseType(field.Name(), field.Type())
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to parse var %v", field.Name())
+			}
+			p.inlineMode = false
+
+			if varType.Type == schema.T_Struct {
+				msg.Fields = append(msg.Fields, varType.Struct.Message.Fields...)
+			}
+
+			continue
+		}
+
+		fmt.Printf("      .%v\n", field.Name())
 
 		varType, err := p.parseType(field.Name(), field.Type())
 		if err != nil {
@@ -140,7 +162,9 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 		})
 	}
 
-	p.schema.Messages = append(p.schema.Messages, msg)
+	if !p.inlineMode {
+		p.schema.Messages = append(p.schema.Messages, msg)
+	}
 
 	varType := &schema.VarType{
 		Type: schema.T_Struct,
