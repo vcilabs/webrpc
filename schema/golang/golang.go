@@ -37,6 +37,10 @@ func NewParser(r *schema.Reader) *parser {
 	}
 }
 
+// Parses Go source file and returns WebRPC schema.
+//
+// This parser was designed to run sequentially, without any concurrency, so we can leverage
+// maps to cache the already parsed types, while not having to deal with sync primitives.
 type parser struct {
 	schema *schema.WebRPCSchema
 
@@ -50,7 +54,7 @@ type parser struct {
 	schemaPkgName string // Shema file's package name.
 }
 
-// Parse parses a Go source file and return WebRPC schema.
+// Parses Go source file and return WebRPC schema.
 func (p *parser) Parse(path string) (*schema.WebRPCSchema, error) {
 	fmt.Println("============== before")
 	t := time.Now()

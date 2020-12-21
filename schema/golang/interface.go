@@ -20,13 +20,10 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 			Schema: p.schema, // denormalize/back-reference
 		}
 
-		fmt.Printf("interface %v\n", name)
+		fmt.Printf("interface %v {\n", name)
+		defer fmt.Printf("}\n")
 
-		// TODO: Do we need to loop over embedded interfaces first? Try defining embeeded interface.
-		// for i := 0; i < iface.NumEmbeddeds(); i++ {
-		// }
-
-		// Loop over interface's methods.
+		// Loop over the interface's methods.
 		for i := 0; i < iface.NumMethods(); i++ {
 			method := iface.Method(i)
 			if !method.Exported() {
@@ -101,7 +98,7 @@ func (p *parser) getMethodArguments(params *types.Tuple, isInput bool) ([]*schem
 			}
 		}
 
-		varType, err := p.parseType("", typ) // Type name will be resolved deeper down the stack.
+		varType, err := p.parseType(typ) // Type name will be resolved deeper down the stack.
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to parse argument %v", name)
 		}
