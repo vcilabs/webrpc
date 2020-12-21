@@ -135,8 +135,6 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 	}
 	p.inlineMode = false
 
-	overwriteField := map[string]int{} // When embedding structs, the later defined fields win.
-
 	for i := 0; i < structTyp.NumFields(); i++ {
 		field := structTyp.Field(i)
 		if !field.Exported() {
@@ -153,19 +151,13 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 
 			if varType.Type == schema.T_Struct {
 				for _, embeddedField := range varType.Struct.Message.Fields {
-					if index, ok := overwriteField[string(embeddedField.Name)]; ok {
-						// Remove the previously defined field of the same name from the slice.
-						msg.Fields = append(msg.Fields[0:index], msg.Fields[index+1:]...)
-					}
-					msg.Fields = append(msg.Fields, embeddedField)
-					overwriteField[string(embeddedField.Name)] = len(msg.Fields) - 1
+					msg.Fields = appendAndDeleteExistingField(msg.Fields, embeddedField)
+					fmt.Printf("      .%v (embedded)\n", string(embeddedField.Name))
 				}
 			}
 
 			continue
 		}
-
-		fmt.Printf("      .%v\n", field.Name())
 
 		fieldName := field.Name()
 
@@ -180,15 +172,11 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 			return nil, errors.Wrapf(err, "failed to parse var %v", field.Name())
 		}
 
-		if index, ok := overwriteField[fieldName]; ok {
-			// Remove the previously defined field of the same name from the slice.
-			msg.Fields = append(msg.Fields[0:index], msg.Fields[index+1:]...)
-		}
-		msg.Fields = append(msg.Fields, &schema.MessageField{
+		msg.Fields = appendAndDeleteExistingField(msg.Fields, &schema.MessageField{
 			Name: schema.VarName(fieldName),
 			Type: varType,
 		})
-		overwriteField[fieldName] = len(msg.Fields) - 1
+		fmt.Printf("      .%v\n", field.Name())
 	}
 
 	varType := &schema.VarType{
@@ -200,6 +188,19 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 	}
 
 	return varType, nil
+}
+
+func appendAndDeleteExistingField(slice []*schema.MessageField, newItem *schema.MessageField) []*schema.MessageField {
+	// If there is a field with the same name already, we want to overwrite it.
+	// Thus, let's find the existing item, and delete it.
+	for i, item := range slice {
+		if item.Name == newItem.Name {
+			copy(slice[i:], slice[i+1:])
+			slice = slice[:len(slice)-1]
+		}
+	}
+	// And then append the new item at the end of the slice.
+	return append(slice, newItem)
 }
 
 func (p *parser) parseSlice(typeName string, sliceTyp *types.Slice) (*schema.VarType, error) {
