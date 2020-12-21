@@ -31,7 +31,7 @@ func (p *parser) parsePkgInterfaces(scope *types.Scope) error {
 			}
 
 			methodName := method.Id()
-			fmt.Printf("- %v\n", methodName)
+			fmt.Printf("  %v\n", methodName)
 
 			methodSignature, ok := method.Type().(*types.Signature)
 			if !ok {

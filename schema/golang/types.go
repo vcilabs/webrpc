@@ -1,7 +1,6 @@
 package golang
 
 import (
-	"fmt"
 	"go/types"
 	"strings"
 
@@ -17,8 +16,6 @@ func (p *parser) parseNamedType(typeName string, typ types.Type) (varType *schem
 	if cached, ok := p.parsedTypes[typ]; ok {
 		return cached, nil
 	}
-
-	fmt.Printf("parseType(%s)\n", typeName)
 
 	// We want to parse each type just once. So we store the result in cache. But also, we need
 	// to lock the cache for recursive types to prevent endless recursion for linked lists etc.
@@ -127,14 +124,6 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 		Type: schema.MessageType("struct"),
 	}
 
-	if !p.inlineMode {
-		defer func() {
-			// Store the struct to WebRPC messages.
-			p.schema.Messages = append(p.schema.Messages, msg)
-		}()
-	}
-	p.inlineMode = false
-
 	for i := 0; i < structTyp.NumFields(); i++ {
 		field := structTyp.Field(i)
 		if !field.Exported() {
@@ -143,7 +132,6 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 
 		tag := structTyp.Tag(i)
 		if field.Embedded() || strings.Contains(tag, `json:",inline"`) {
-			p.inlineMode = true
 			varType, err := p.parseNamedType("", field.Type())
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to parse var %v", field.Name())
@@ -151,11 +139,9 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 
 			if varType.Type == schema.T_Struct {
 				for _, embeddedField := range varType.Struct.Message.Fields {
-					msg.Fields = appendAndDeleteExistingField(msg.Fields, embeddedField)
-					fmt.Printf("      .%v (embedded)\n", string(embeddedField.Name))
+					msg.Fields = appendMessageFieldAndDeleteExisting(msg.Fields, embeddedField)
 				}
 			}
-
 			continue
 		}
 
@@ -172,11 +158,10 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 			return nil, errors.Wrapf(err, "failed to parse var %v", field.Name())
 		}
 
-		msg.Fields = appendAndDeleteExistingField(msg.Fields, &schema.MessageField{
+		msg.Fields = appendMessageFieldAndDeleteExisting(msg.Fields, &schema.MessageField{
 			Name: schema.VarName(fieldName),
 			Type: varType,
 		})
-		fmt.Printf("      .%v\n", field.Name())
 	}
 
 	varType := &schema.VarType{
@@ -187,14 +172,18 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 		},
 	}
 
+	p.schema.Messages = append(p.schema.Messages, msg)
+
 	return varType, nil
 }
 
-func appendAndDeleteExistingField(slice []*schema.MessageField, newItem *schema.MessageField) []*schema.MessageField {
-	// If there is a field with the same name already, we want to overwrite it.
-	// Thus, let's find the existing item, and delete it.
+// Appends message field to the given slice, while also removing any previously defined field of the same name.
+// This lets us overwrite embedded fields, exactly how Go does it behind the scenes in the JSON marshaller.
+func appendMessageFieldAndDeleteExisting(slice []*schema.MessageField, newItem *schema.MessageField) []*schema.MessageField {
+	// Let's try to find an existing item of the same name and delete it.
 	for i, item := range slice {
 		if item.Name == newItem.Name {
+			// Delete item.
 			copy(slice[i:], slice[i+1:])
 			slice = slice[:len(slice)-1]
 		}
