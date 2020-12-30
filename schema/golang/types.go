@@ -2,11 +2,19 @@ package golang
 
 import (
 	"go/types"
+	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/webrpc/webrpc/schema"
 )
+
+// Given the `db:"id,omitempty,pk" json:"id,string"` struct tag,
+// this regex will always return the following three submatches:
+// [0]: json:"id,string"
+// [1]: id
+// [2]: ,string
+var jsonTagRegex, _ = regexp.Compile(`\s?json:\"([^,\"]*)(,[^\"]*)?\"`)
 
 func (p *parser) parseType(typ types.Type) (varType *schema.VarType, err error) {
 	return p.parseNamedType("", typ)
@@ -17,19 +25,19 @@ func (p *parser) parseNamedType(typeName string, typ types.Type) (varType *schem
 		return cached, nil
 	}
 
-	// We want to parse each type just once. So we store the result in cache. But also, we need
-	// to lock the cache for recursive types to prevent endless recursion for linked lists etc.
-	// Note: We're parsing sequentially, no need for sync.Map.
+	// We want to parse each unique type exactly once. Thus we store the result schema.VarType for
+	// each input Go type into a hashmap cache. But also, since we need to support recursive types
+	// (ie. self-referencing structs, linked lists, circular dependencies etc.), we warm the cache
+	// up-front, and then we update the value via a pointer dereference in the defer function.
+	// Any subseqential calls with the same input type, even nested/recursive calls from within this
+	// function, will return the same pointer. Note: We're parsing sequentially, no need for sync.Map.
 	lockRecursiveTypes := &schema.VarType{}
-	p.parsedTypes[typ] = lockRecursiveTypes
+	p.parsedTypes[typ] = lockRecursiveTypes // Warm the cache up-front.
 	defer func() {
-		if err != nil {
-			delete(p.parsedTypes, typ)
-			return
+		if err == nil {
+			*lockRecursiveTypes = *varType // Update the value via a pointer dereference.
+			// TODO: Return varType instead? They are the same, but we'd return the one pointer.
 		}
-
-		// Update the value in cache for any following calls once we're done.
-		*lockRecursiveTypes = *varType
 	}()
 
 	switch v := typ.(type) {
@@ -146,8 +154,29 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 		}
 
 		fieldName := field.Name()
+		if strings.Contains(tag, `json:"`) {
+			submatches := jsonTagRegex.FindStringSubmatch(tag)
+			if len(submatches) != 3 {
+				return nil, errors.Errorf("unexpected number of json struct tag submatches")
+			}
+			if submatches[1] != "" && submatches[1] != "-" {
+				fieldName = submatches[1]
+			}
+			if strings.Contains(submatches[2], ",string") { // Forced "string" type.
+				msg.Fields = appendMessageFieldAndDeleteExisting(msg.Fields, &schema.MessageField{
+					Name: schema.VarName(fieldName),
+					Type: &schema.VarType{Type: schema.T_String},
+				})
+				continue
+			}
+		}
 
-		// We need to provide a type name for anonymous structs. {currentStructType}{FieldName}
+		// We need to come up with a name for anonymous struct fields. Example:
+		// type Something struct {
+		// 	 AnonymousField struct { // ==> this struct's type doesn't have a name, let's make it "SomethingAnonymousField"
+		//     Name string
+		//   }
+		// }
 		var anonymousStructTypeName string
 		if _, ok := field.Type().Underlying().(*types.Struct); ok {
 			anonymousStructTypeName = typeName + strings.ToTitle(fieldName[:1]) + fieldName[1:]
