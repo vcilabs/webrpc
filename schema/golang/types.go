@@ -159,10 +159,13 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 			if len(submatches) != 3 {
 				return nil, errors.Errorf("unexpected number of json struct tag submatches")
 			}
-			if submatches[1] != "" && submatches[1] != "-" {
+			if submatches[1] == "-" { // suppressed field in JSON struct tag
+				continue
+			}
+			if submatches[1] != "" { // field name defined in JSON struct tag
 				fieldName = submatches[1]
 			}
-			if strings.Contains(submatches[2], ",string") { // Forced "string" type.
+			if strings.Contains(submatches[2], ",string") { // field type should be string in JSON
 				msg.Fields = appendMessageFieldAndDeleteExisting(msg.Fields, &schema.MessageField{
 					Name: schema.VarName(fieldName),
 					Type: &schema.VarType{Type: schema.T_String},
