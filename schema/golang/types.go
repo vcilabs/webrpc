@@ -176,7 +176,7 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 
 		// We need to come up with a name for anonymous struct fields. Example:
 		// type Something struct {
-		// 	 AnonymousField struct { // ==> this struct's type doesn't have a name, let's make it "SomethingAnonymousField"
+		// 	 AnonymousField struct { // ==> this field doesn't have a type name since it's an anonymous struct, let's make it "SomethingAnonymousField"
 		//     Name string
 		//   }
 		// }
