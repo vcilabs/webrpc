@@ -199,22 +199,21 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 		}
 
 		msg.Fields = appendMessageFieldAndDeleteExisting(msg.Fields, &schema.MessageField{
-			Name: schema.VarName(fieldName),
-			Type: varType,
+			Name:     schema.VarName(fieldName),
+			Type:     varType,
+			Optional: optional,
 		})
 	}
 
-	varType := &schema.VarType{
+	p.schema.Messages = append(p.schema.Messages, msg)
+
+	return &schema.VarType{
 		Type: schema.T_Struct,
 		Struct: &schema.VarStructType{
 			Name:    typeName,
 			Message: msg,
 		},
-	}
-
-	p.schema.Messages = append(p.schema.Messages, msg)
-
-	return varType, nil
+	}, nil
 }
 
 // Appends message field to the given slice, while also removing any previously defined field of the same name.
