@@ -153,9 +153,15 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 			continue
 		}
 
+		optional := false
+
 		fieldName := field.Name()
 		if strings.Contains(tag, `json:"`) {
 			submatches := jsonTagRegex.FindStringSubmatch(tag)
+			// Submatches from the jsonTagRegex:
+			// [0]: json:"deleted_by,omitempty,string"
+			// [1]: deleted_by
+			// [2]: ,omitempty,string
 			if len(submatches) != 3 {
 				return nil, errors.Errorf("unexpected number of json struct tag submatches")
 			}
@@ -165,10 +171,12 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 			if submatches[1] != "" { // field name defined in JSON struct tag
 				fieldName = submatches[1]
 			}
+			optional = strings.Contains(submatches[2], ",omitempty")
 			if strings.Contains(submatches[2], ",string") { // field type should be string in JSON
 				msg.Fields = appendMessageFieldAndDeleteExisting(msg.Fields, &schema.MessageField{
-					Name: schema.VarName(fieldName),
-					Type: &schema.VarType{Type: schema.T_String},
+					Name:     schema.VarName(fieldName),
+					Type:     &schema.VarType{Type: schema.T_String},
+					Optional: optional,
 				})
 				continue
 			}
