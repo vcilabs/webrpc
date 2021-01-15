@@ -42,8 +42,23 @@ func (p *parser) parseNamedType(typeName string, typ types.Type) (varType *schem
 
 	switch v := typ.(type) {
 	case *types.Named:
-		typeName := v.Obj().Name()
 		pkg := v.Obj().Pkg()
+		typeName := v.Obj().Name()
+
+		// Does the type satisfy encoding.TextMarshaller and encoding.TextUnmarshaler interfaces?
+		// Then its value is always rendered as a quoted string in JSON encoding. Return string.
+		marshalTextMethod, _, _ := types.LookupFieldOrMethod(v, true, pkg, "MarshalText")
+		unmarshalTextMethod, _, _ := types.LookupFieldOrMethod(v, true, pkg, "UnmarshalText")
+		if marshalTextMethod != nil && unmarshalTextMethod != nil &&
+			strings.HasSuffix(marshalTextMethod.String(), ".MarshalText() ([]byte, error)") &&
+			strings.HasSuffix(unmarshalTextMethod.String(), ".UnmarshalText(text []byte) error") {
+			var varType schema.VarType
+			if err := schema.ParseVarTypeExpr(p.schema, "string", &varType); err != nil {
+				return nil, errors.Wrap(err, "failed to parse string")
+			}
+			return &varType, nil
+		}
+
 		if pkg != nil {
 			// If the type belongs to a specific package, save the pkg reference to schema.Imports.
 			// Prefix the type name with the package name to avoid conflicts.
