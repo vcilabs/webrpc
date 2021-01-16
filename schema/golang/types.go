@@ -105,8 +105,6 @@ func (p *parser) parseNamedType(typeName string, typ types.Type) (varType *schem
 		return p.parseMap(typeName, v)
 
 	case *types.Pointer:
-		// TODO: Consider adding schema.T_Pointer, or add metadata to Golang
-		// type to distinguish between "pointer to struct" vs. "plain struct".
 		varType, err = p.parseNamedType(typeName, v.Elem())
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to dereference pointer")
@@ -195,6 +193,10 @@ func (p *parser) parseStruct(typeName string, structTyp *types.Struct) (*schema.
 				})
 				continue
 			}
+		}
+
+		if _, ok := field.Type().Underlying().(*types.Pointer); ok {
+			optional = true
 		}
 
 		// We need to come up with a name for anonymous struct fields. Example:
