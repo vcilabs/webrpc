@@ -3,6 +3,7 @@ package golang
 import (
 	"fmt"
 	"go/types"
+	"path"
 	"time"
 
 	"github.com/pkg/errors"
@@ -55,20 +56,21 @@ type parser struct {
 }
 
 // Parses Go source file and return WebRPC schema.
-func (p *parser) Parse(path string) (*schema.WebRPCSchema, error) {
+func (p *parser) Parse(filePath string) (*schema.WebRPCSchema, error) {
 	fmt.Println("============== before")
 	t := time.Now()
 	defer func() {
 		fmt.Println("============== after ", time.Since(t))
 	}()
 
+	dir := path.Dir(filePath)
+
 	cfg := &packages.Config{
-		// TODO: Make the Dir dynamic, parse it from the schema file's path (+current working directory if not absolute).
-		Dir:  "/Users/vojtechvitek/go/src/github.com/vcilabs/hubs/contract",
+		Dir:  dir,
 		Mode: packages.NeedName | packages.NeedImports | packages.NeedTypes | packages.NeedFiles | packages.NeedDeps | packages.NeedSyntax,
 	}
 
-	schemaPkg, err := packages.Load(cfg, path)
+	schemaPkg, err := packages.Load(cfg, dir)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load packages")
 	}
