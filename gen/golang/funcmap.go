@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/webrpc/webrpc/gen"
 	"github.com/webrpc/webrpc/schema"
 )
 
@@ -305,13 +306,32 @@ func isEnum(t schema.MessageType) bool {
 	return t == "enum"
 }
 
+func printGoImports(proto *schema.WebRPCSchema, opts gen.TargetOptions) func() string {
+	return func() string {
+		if opts.Extra != "goimports" {
+			return ""
+		}
+		var b strings.Builder
+		for _, goImport := range proto.Imports {
+			fmt.Fprintf(&b, "\n  %q", goImport.Path)
+		}
+		return b.String()
+	}
+}
+
+func importTypes(opts gen.TargetOptions) func() bool {
+	return func() bool {
+		return opts.Extra == "goimports"
+	}
+}
+
 func hasFieldType(proto *schema.WebRPCSchema) func(fieldType string) (bool, error) {
 	return func(fieldType string) (bool, error) {
 		return proto.HasFieldType(fieldType)
 	}
 }
 
-func templateFuncMap(proto *schema.WebRPCSchema) map[string]interface{} {
+func templateFuncMap(proto *schema.WebRPCSchema, opts gen.TargetOptions) map[string]interface{} {
 	return map[string]interface{}{
 		"serviceMethodName":     serviceMethodName,
 		"serviceMethodJSONName": serviceMethodJSONName,
@@ -337,5 +357,7 @@ func templateFuncMap(proto *schema.WebRPCSchema) map[string]interface{} {
 		"isEnum":                isEnum,
 		"exportedField":         exportedField,
 		"downcaseName":          downcaseName,
+		"printGoImports":        printGoImports(proto, opts),
+		"importTypes":           importTypes(opts),
 	}
 }

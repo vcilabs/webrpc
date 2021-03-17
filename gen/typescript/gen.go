@@ -8,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/goware/statik/fs"
+	"github.com/pkg/errors"
 	"github.com/webrpc/webrpc/gen"
 	"github.com/webrpc/webrpc/gen/typescript/embed"
 	"github.com/webrpc/webrpc/schema"
@@ -58,7 +59,7 @@ func (g *generator) Gen(proto *schema.WebRPCSchema, opts gen.TargetOptions) (str
 	genBuf := bytes.NewBuffer(nil)
 	err = tmpl.ExecuteTemplate(genBuf, "proto", vars)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "failed to execute %v template", tmpl.Name())
 	}
 
 	return string(genBuf.Bytes()), nil
