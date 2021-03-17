@@ -63,14 +63,12 @@ func (p *parser) Parse(filePath string) (*schema.WebRPCSchema, error) {
 		fmt.Println("============== after ", time.Since(t))
 	}()
 
-	dir := path.Dir(filePath)
-
 	cfg := &packages.Config{
-		Dir:  dir,
+		Dir:  path.Dir(filePath),
 		Mode: packages.NeedName | packages.NeedImports | packages.NeedTypes | packages.NeedFiles | packages.NeedDeps | packages.NeedSyntax,
 	}
 
-	schemaPkg, err := packages.Load(cfg, dir)
+	schemaPkg, err := packages.Load(cfg, filePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load packages")
 	}
